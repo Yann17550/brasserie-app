@@ -22,9 +22,10 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     setIsLoading(true);
     setStatusMessage("Recherche du fût correspondant au QR code...");
     setErrorMessage(null);
-    setDebugInfo(null);
 
     const cleanToken = qrToken.trim();
+    // DIAGNOSTIC IMMÉDIAT : On affiche ce que le téléphone a lu
+    setDebugInfo(`Chaîne lue : "${cleanToken}" | Longueur : ${cleanToken.length} caractères`);
 
     try {
       const { data: keg, error: fetchError } = await supabase
@@ -34,15 +35,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         .single();
 
       if (fetchError) {
-        // Diagnostic : On affiche l'erreur réelle de Supabase
-        setErrorMessage("Erreur lors de la recherche dans la base de données.");
-        setDebugInfo(`Code Supabase : ${fetchError.code} | Message : ${fetchError.message} | Détail : ${fetchError.details}`);
-        return;
-      }
-
-      if (!keg) {
-        setErrorMessage("Fût introuvable dans la base de données pour ce QR code.");
-        setDebugInfo(`Texte recherché : "${cleanToken}" (Longueur : ${cleanToken.length} caractères)`);
+        setErrorMessage(`Erreur Supabase (PGRST116) : Aucun fût trouvé pour ce jeton.`);
         return;
       }
 
@@ -53,34 +46,21 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         .update({ current_status: 'stock', updated_at: new Date().toISOString() })
         .eq('id', keg.id);
 
-      if (updateError) {
-        throw new Error(`Erreur lors de la mise à jour du fût : ${updateError.message}`);
-      }
+      if (updateError) throw new Error(updateError.message);
 
       const { error: movementError } = await supabase
         .from('keg_movements')
-        .insert([
-          {
-            keg_id: keg.id,
-            user_id: userId,
-            movement_type: 'entrée_stock',
-            notes: 'Entrée en stock automatique via scan mobile.'
-          }
-        ]);
+        .insert([{ keg_id: keg.id, user_id: userId, movement_type: 'entrée_stock', notes: 'Entrée en stock automatique via scan mobile.' }]);
 
-      if (movementError) {
-        throw new Error(`Erreur lors de l'enregistrement dans l'historique : ${movementError.message}`);
-      }
+      if (movementError) throw new Error(movementError.message);
 
-      setStatusMessage(`Succès ! Le fût est enregistré en stock et le mouvement a été historisé.`);
+      setStatusMessage(`Succès ! Le fût est enregistré en stock.`);
     } catch (error: any) {
-      console.error(error);
       setErrorMessage(error.message || "Une erreur technique est survenue.");
     } finally {
       setIsLoading(false);
     }
   }, [userId]);
-
   useEffect(() => {
     const scanner = new Html5QrcodeScanner(
       'reader',
