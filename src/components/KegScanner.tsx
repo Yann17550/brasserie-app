@@ -4,7 +4,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { supabase } from '../services/supabaseClient';
 
 interface KegScannerProps {
-  userId: string; // ID de l'utilisateur connecté requis par App.tsx
+  userId: string;
 }
 
 export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
@@ -13,33 +13,41 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
+  // États de diagnostic temporaires
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+  
   const isProcessingRef = useRef<boolean>(false);
 
-  // Processus de traitement du fût d'origine
   const handleKegProcess = useCallback(async (qrToken: string) => {
     setIsLoading(true);
     setStatusMessage("Recherche du fût correspondant au QR code...");
     setErrorMessage(null);
+    setDebugInfo(null);
 
-    // Ajout utile : On nettoie le token pour la requête Supabase
     const cleanToken = qrToken.trim();
 
     try {
-      // Recherche directe basée sur le token nettoyé
       const { data: keg, error: fetchError } = await supabase
         .from('kegs')
         .select('*')
         .eq('qr_code_token', cleanToken)
         .single();
 
-      if (fetchError || !keg) {
+      if (fetchError) {
+        // Diagnostic : On affiche l'erreur réelle de Supabase
+        setErrorMessage("Erreur lors de la recherche dans la base de données.");
+        setDebugInfo(`Code Supabase : ${fetchError.code} | Message : ${fetchError.message} | Détail : ${fetchError.details}`);
+        return;
+      }
+
+      if (!keg) {
         setErrorMessage("Fût introuvable dans la base de données pour ce QR code.");
+        setDebugInfo(`Texte recherché : "${cleanToken}" (Longueur : ${cleanToken.length} caractères)`);
         return;
       }
 
       setStatusMessage(`Fût identifié : ${keg.beer_type} (${keg.capacity_liters}L). Enregistrement du mouvement...`);
 
-      // Mise à jour du statut du fût
       const { error: updateError } = await supabase
         .from('kegs')
         .update({ current_status: 'stock', updated_at: new Date().toISOString() })
@@ -49,7 +57,6 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         throw new Error(`Erreur lors de la mise à jour du fût : ${updateError.message}`);
       }
 
-      // Insertion du mouvement avec la colonne user_id validée
       const { error: movementError } = await supabase
         .from('keg_movements')
         .insert([
@@ -91,10 +98,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       
       try {
         await scanner.clear(); 
-        
-        // Ajout utile : On nettoie le texte brut décodé immédiatement
         const cleanedText = decodedText.trim();
-        
         setScanResult(cleanedText);
         await handleKegProcess(cleanedText);
       } catch (err) {
@@ -139,12 +143,21 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         </div>
       )}
 
+      {/* Affichage du bloc de diagnostic si disponible */}
+      {debugInfo && (
+        <div style={{ padding: '10px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px', color: '#d46b08', marginBottom: '15px', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
+          <strong>🔧 Info Diagnostic :</strong><br />
+          {debugInfo}
+        </div>
+      )}
+
       {!isLoading && scanResult && (
         <button 
           onClick={() => { 
             setScanResult(null); 
             setStatusMessage(null); 
             setErrorMessage(null);
+            setDebugInfo(null);
             window.location.reload();
           }}
           style={{ width: '100%', padding: '10px', backgroundColor: '#001529', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
