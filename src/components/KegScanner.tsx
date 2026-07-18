@@ -2,142 +2,156 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { supabase } from '../services/supabaseClient';
-import { MovementType } from '../types/app';
 
-export const KegScanner: React.FC = () => {
+interface KegScannerProps {
+  userId: string; // L'ID de l'utilisateur connecté passé depuis App.tsx
+}
+
+export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const [scanResult, setScanResult] = useState<string | null>(null);
-  const [movementType, setMovementType] = useState<MovementType>('entrée_stock');
-  const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Référence pour conserver l'instance du scanner de la bibliothèque
-  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  // Réf pour éviter d'exécuter le traitement plusieurs fois si le scanneur s'active rapidement
+  const isProcessingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    // Initialisation du scanner configuré pour un rendu fluide sur smartphone
+    // Initialisation du scanner de QR Code de la bibliothèque html5-qrcode
     const scanner = new Html5QrcodeScanner(
       'reader',
-      { 
-        fps: 10, 
+      {
+        fps: 10,
         qrbox: { width: 250, height: 250 },
         rememberLastUsedCamera: true
       },
-      /* verbose= */ false
+      false
     );
 
-    scannerRef.current = scanner;
-
-    // Lancement du scan et capture du résultat
-    scanner.render(
-      (decodedText) => {
+    // Déclenché dès qu'un QR code valide est décodé par la caméra
+    const onScanSuccess = async (decodedText: string) => {
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+      
+      try {
+        // Arrêt propre du scanner avant le traitement pour éviter les doublons
+        await scanner.clear(); 
         setScanResult(decodedText);
-        setStatusMessage(null);
-      },
-      (error) => {
-        // Échec silencieux des scans intermédiaires (recherche de focus)
-      }
-    );
-
-    // Nettoyage de la caméra à la fermeture du composant
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear().catch((err) => console.error("Erreur de nettoyage du scanner :", err));
+        await handleKegProcess(decodedText);
+      } catch (err) {
+        console.error("Erreur lors de l'arrêt du scanner :", err);
+      } finally {
+        isProcessingRef.current = false;
       }
     };
-  }, []);
 
-  const handleSubmitMovement = async () => {
-    if (!scanResult) return;
+    const onScanFailure = (error: any) => {
+      // Ignoré pour ne pas surcharger la console pendant la recherche de focus
+      console.warn(`Scan en cours... ${error}`);
+    };
 
-    setLoading(true);
-    setStatusMessage(null);
+    scanner.render(onScanSuccess, onScanFailure);
+
+    return () => {
+      scanner.clear().catch((err) => console.error("Erreur lors du nettoyage du scanner", err));
+    };
+  }, []); // Tableau de dépendances vide pour garantir une seule initialisation du scanner
+
+  /**
+   * Processus principal : Recherche du fût -> Mise à jour du fût -> Historisation du mouvement
+   */
+  const handleKegProcess = async (qrToken: string) => {
+    setIsLoading(true);
+    setStatusMessage("Recherche du fût correspondant au QR code...");
+    setErrorMessage(null);
 
     try {
-      // 1. Récupération de l'utilisateur actif via la session Supabase
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      if (sessionError || !session?.user) {
-        throw new Error("Authentification requise pour enregistrer un mouvement.");
+      // 1. Recherche du fût via la colonne token de la base
+      const { data: keg, error: fetchError } = await supabase
+        .from('kegs')
+        .select('*')
+        .eq('qr_code_token', qrToken)
+        .single();
+
+      if (fetchError || !keg) {
+        setErrorMessage("Fût introuvable dans la base de données pour ce QR code.");
+        return;
       }
 
-      // 2. Insertion du mouvement dans la table 'keg_movements'
-      const { error: insertError } = await supabase
+      setStatusMessage(`Fût identifié : ${keg.beer_type} (${keg.capacity_liters}L). Enregistrement du mouvement...`);
+
+      // 2. Mise à jour du statut du fût vers 'stock'
+      const { error: updateError } = await supabase
+        .from('kegs')
+        .update({ current_status: 'stock', updated_at: new Date().toISOString() })
+        .eq('id', keg.id);
+
+      if (updateError) {
+        throw new Error(`Erreur lors de la mise à jour du fût : ${updateError.message}`);
+      }
+
+      // 3. Enregistrement du mouvement dans 'keg_movements' avec la colonne user_id
+      const { error: movementError } = await supabase
         .from('keg_movements')
         .insert([
           {
-            keg_id: scanResult, // Le QR code décodé doit correspondre à l'identifiant du fût
-            movement_type: movementType,
-            operator_id: session.user.id,
-            created_at: new Date().toISOString()
+            keg_id: keg.id,
+            user_id: userId, // Alignement strict avec la colonne user_id
+            movement_type: 'entrée_stock',
+            notes: 'Entrée en stock automatique via scan mobile.'
           }
         ]);
 
-      if (insertError) throw insertError;
+      if (movementError) {
+        throw new Error(`Erreur lors de l'enregistrement dans l'historique : ${movementError.message}`);
+      }
 
-      setStatusMessage({ type: 'success', text: `Mouvement "${movementType}" enregistré avec succès pour le fût.` });
-      setScanResult(null); // Réinitialisation pour le prochain scan
-    } catch (err: any) {
-      setStatusMessage({ type: 'error', text: err.message || "Erreur lors de l'enregistrement." });
+      setStatusMessage(`Succès ! Le fût est enregistré en stock et le mouvement a été historisé.`);
+    } catch (error: any) {
+      console.error(error);
+      setErrorMessage(error.message || "Une erreur technique est survenue.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '20px' }}>
-      <h2>Scanner un Fût</h2>
+    <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
+      <h2 style={{ textAlign: 'center' }}>Scanner un Fût</h2>
+      
+      {/* Conteneur d'affichage de la caméra */}
+      <div id="reader" style={{ width: '100%', marginBottom: '20px' }}></div>
 
-      {statusMessage && (
-        <div style={{ 
-          padding: '10px', 
-          marginBottom: '15px', 
-          borderRadius: '4px',
-          backgroundColor: statusMessage.type === 'success' ? '#d4edda' : '#f8d7da',
-          color: statusMessage.type === 'success' ? '#155724' : '#721c24'
-        }}>
-          {statusMessage.text}
+      {scanResult && (
+        <div style={{ wordBreak: 'break-all', marginBottom: '15px', fontSize: '14px' }}>
+          <strong>Lien détecté :</strong> {scanResult}
         </div>
       )}
 
-      <div style={{ marginBottom: '20px' }}>
-        <label htmlFor="movement-type" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-          Type de mouvement :
-        </label>
-        <select
-          id="movement-type"
-          value={movementType}
-          onChange={(e) => setMovementType(e.target.value as MovementType)}
-          style={{ width: '100%', padding: '10px', fontSize: '16px' }}
-          disabled={loading}
-        >
-          <option value="entrée_stock">Entrée en stock (Retour brasserie / Remplissage)</option>
-          <option value="sortie_livraison">Sortie - Livraison client</option>
-          <option value="sortie_emporté">Sortie - Emporté direct</option>
-        </select>
-      </div>
-
-      {/* Zone d'affichage du flux vidéo de la caméra */}
-      <div id="reader" style={{ width: '100%', borderRadius: '8px', overflow: 'hidden' }}></div>
-
-      {scanResult && (
-        <div style={{ marginTop: '20px', padding: '15px', border: '1px solid #007bff', borderRadius: '6px', backgroundColor: '#f7fafd' }}>
-          <p><strong>Code détecté :</strong> <code>{scanResult}</code></p>
-          <button
-            onClick={handleSubmitMovement}
-            disabled={loading}
-            style={{ 
-              width: '100%', 
-              padding: '12px', 
-              backgroundColor: '#007bff', 
-              color: '#fff', 
-              border: 'none', 
-              borderRadius: '4px', 
-              cursor: 'pointer',
-              fontSize: '16px'
-            }}
-          >
-            {loading ? "Validation..." : "Confirmer ce mouvement"}
-          </button>
+      {statusMessage && (
+        <div style={{ padding: '10px', backgroundColor: '#e6f7ff', border: '1px solid #91d5ff', borderRadius: '4px', color: '#1890ff', marginBottom: '15px' }}>
+          {statusMessage}
         </div>
+      )}
+
+      {errorMessage && (
+        <div style={{ padding: '10px', backgroundColor: '#fff1f0', border: '1px solid #ffa39e', borderRadius: '4px', color: '#f5222d', marginBottom: '15px' }}>
+          {errorMessage}
+        </div>
+      )}
+
+      {!isLoading && scanResult && (
+        <button 
+          onClick={() => { 
+            setScanResult(null); 
+            setStatusMessage(null); 
+            setErrorMessage(null);
+            window.location.reload(); // Force le rechargement pour réinitialiser proprement la caméra HTML5
+          }}
+          style={{ width: '100%', padding: '10px', backgroundColor: '#001529', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+        >
+          Scanner un autre fût
+        </button>
       )}
     </div>
   );
