@@ -14,36 +14,11 @@ function App() {
   const [currentPage, setCurrentPage] = useState<ActivePage>('accueil');
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // 1. Écoute les changements d'état de l'authentification (connexion/déconnexion)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setUserProfile(null);
-        setLoading(false);
-      }
-    });
-
-    // 2. Vérification de la session existante au premier chargement
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  // Récupère le profil et le rôle de l'utilisateur depuis la table 'profiles'
+  // Récupère le profil et le rôle de l'utilisateur depuis la table réelle 'users_profile'
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users_profile')
         .select('id, full_name, role')
         .eq('id', userId)
         .single();
@@ -56,6 +31,49 @@ function App() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // 1. Vérification de la session existante au premier chargement de manière séquentielle
+    const initializeAuth = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+
+        setSession(currentSession);
+        if (currentSession?.user) {
+          await fetchUserProfile(currentSession.user.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Erreur d'initialisation auth:", err);
+        if (isMounted) setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // 2. Écoute les changements d'état de l'authentification (connexion/déconnexion)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      if (!isMounted) return;
+      
+      setSession(newSession);
+      if (newSession?.user) {
+        setLoading(true); // Re-bascule en chargement le temps de chasser le profil
+        fetchUserProfile(newSession.user.id);
+      } else {
+        setUserProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -90,7 +108,8 @@ function App() {
         )}
         
         {currentPage === 'scan_keg' && (
-          <KegScanner />
+          /* CORRECTION : On passe l'ID de l'opérateur connecté au scanner pour la table keg_movements */
+          <KegScanner userId={session.user.id} />
         )}
         
         {currentPage === 'check_stock' && (

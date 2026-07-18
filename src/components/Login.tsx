@@ -17,8 +17,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
     setError(null);
 
-    // Validation basique des entrées
-    if (!email || !password) {
+    // Normalisation de l'email pour éviter les problèmes de casse
+    const cleanedEmail = email.trim().toLowerCase();
+
+    // Validation des entrées
+    if (!cleanedEmail || !password) {
       setError('Veuillez remplir tous les champs.');
       setLoading(false);
       return;
@@ -27,8 +30,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     try {
       // Tentative de connexion via l'API d'authentification Supabase
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: cleanedEmail,
+        password: password,
       });
 
       if (authError) throw authError;
@@ -36,7 +39,12 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       // Déclenchement du callback en cas de succès
       onLoginSuccess();
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors de la connexion.');
+      // Traduction des erreurs communes pour l'utilisateur
+      if (err.message === 'Invalid login credentials') {
+        setError('Identifiants ou mot de passe incorrects.');
+      } else {
+        setError(err.message || 'Une erreur est survenue lors de la connexion.');
+      }
     } finally {
       setLoading(false);
     }
@@ -58,6 +66,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <input
             id="email"
             type="email"
+            name="email"
+            autoComplete="username"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
@@ -70,6 +80,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           <input
             id="password"
             type="password"
+            name="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
