@@ -4,7 +4,7 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import { supabase } from '../services/supabaseClient';
 
 interface KegScannerProps {
-  userId: string; // L'ID de l'utilisateur connecté passé depuis App.tsx
+  userId: string; // ID de l'utilisateur connecté requis par App.tsx
 }
 
 export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
@@ -13,23 +13,19 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
-  // Réf pour éviter d'exécuter le traitement plusieurs fois si le scanneur s'active rapidement
   const isProcessingRef = useRef<boolean>(false);
 
-  /**
-   * Processus principal : Recherche du fût -> Mise à jour du fût -> Historisation du mouvement
-   * Enveloppé dans useCallback pour stabiliser la référence et satisfaire ESLint
-   */
+  // Processus de traitement du fût d'origine
   const handleKegProcess = useCallback(async (qrToken: string) => {
     setIsLoading(true);
     setStatusMessage("Recherche du fût correspondant au QR code...");
     setErrorMessage(null);
 
-    // Nettoyage de sécurité supplémentaire des espaces invisibles
+    // Ajout utile : On nettoie le token pour la requête Supabase
     const cleanToken = qrToken.trim();
 
     try {
-      // 1. Recherche du fût via la colonne token de la base
+      // Recherche directe basée sur le token nettoyé
       const { data: keg, error: fetchError } = await supabase
         .from('kegs')
         .select('*')
@@ -43,7 +39,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
 
       setStatusMessage(`Fût identifié : ${keg.beer_type} (${keg.capacity_liters}L). Enregistrement du mouvement...`);
 
-      // 2. Mise à jour du statut du fût vers 'stock'
+      // Mise à jour du statut du fût
       const { error: updateError } = await supabase
         .from('kegs')
         .update({ current_status: 'stock', updated_at: new Date().toISOString() })
@@ -53,13 +49,13 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         throw new Error(`Erreur lors de la mise à jour du fût : ${updateError.message}`);
       }
 
-      // 3. Enregistrement du mouvement dans 'keg_movements' avec la colonne user_id
+      // Insertion du mouvement avec la colonne user_id validée
       const { error: movementError } = await supabase
         .from('keg_movements')
         .insert([
           {
             keg_id: keg.id,
-            user_id: userId, // Alignement strict avec la colonne user_id
+            user_id: userId,
             movement_type: 'entrée_stock',
             notes: 'Entrée en stock automatique via scan mobile.'
           }
@@ -76,10 +72,9 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [userId]); // Dépendance de userId car utilisé à l'intérieur
+  }, [userId]);
 
   useEffect(() => {
-    // Initialisation du scanner de QR Code de la bibliothèque html5-qrcode
     const scanner = new Html5QrcodeScanner(
       'reader',
       {
@@ -90,22 +85,20 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       false
     );
 
-    // Déclenché dès qu'un QR code valide est décodé par la caméra
     const onScanSuccess = async (decodedText: string) => {
       if (isProcessingRef.current) return;
       isProcessingRef.current = true;
       
       try {
-        // Arrêt propre du scanner avant le traitement pour éviter les doublons
         await scanner.clear(); 
         
-        // Nettoyage immédiat du texte brut décodé par l'appareil photo
+        // Ajout utile : On nettoie le texte brut décodé immédiatement
         const cleanedText = decodedText.trim();
         
         setScanResult(cleanedText);
         await handleKegProcess(cleanedText);
       } catch (err) {
-        console.error("Erreur lors de l'arrêt du scanner :", err);
+        console.error("Erreur scanner :", err);
       } finally {
         isProcessingRef.current = false;
       }
@@ -120,7 +113,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     return () => {
       scanner.clear().catch((err) => console.error("Erreur lors du nettoyage du scanner", err));
     };
-  }, [handleKegProcess]); // Dépendance stable pour valider ESLint
+  }, [handleKegProcess]);
 
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
