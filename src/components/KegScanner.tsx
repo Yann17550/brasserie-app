@@ -25,12 +25,15 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     setStatusMessage("Recherche du fût correspondant au QR code...");
     setErrorMessage(null);
 
+    // Nettoyage de sécurité supplémentaire des espaces invisibles
+    const cleanToken = qrToken.trim();
+
     try {
       // 1. Recherche du fût via la colonne token de la base
       const { data: keg, error: fetchError } = await supabase
         .from('kegs')
         .select('*')
-        .eq('qr_code_token', qrToken)
+        .eq('qr_code_token', cleanToken)
         .single();
 
       if (fetchError || !keg) {
@@ -95,8 +98,12 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       try {
         // Arrêt propre du scanner avant le traitement pour éviter les doublons
         await scanner.clear(); 
-        setScanResult(decodedText);
-        await handleKegProcess(decodedText);
+        
+        // Nettoyage immédiat du texte brut décodé par l'appareil photo
+        const cleanedText = decodedText.trim();
+        
+        setScanResult(cleanedText);
+        await handleKegProcess(cleanedText);
       } catch (err) {
         console.error("Erreur lors de l'arrêt du scanner :", err);
       } finally {
@@ -113,7 +120,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     return () => {
       scanner.clear().catch((err) => console.error("Erreur lors du nettoyage du scanner", err));
     };
-  }, [handleKegProcess]); // Ajout de la dépendance stable pour valider ESLint
+  }, [handleKegProcess]); // Dépendance stable pour valider ESLint
 
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
