@@ -1,5 +1,5 @@
 // src/components/KegScanner.tsx
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { supabase } from '../services/supabaseClient';
 
@@ -16,51 +16,11 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   // Réf pour éviter d'exécuter le traitement plusieurs fois si le scanneur s'active rapidement
   const isProcessingRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    // Initialisation du scanner de QR Code de la bibliothèque html5-qrcode
-    const scanner = new Html5QrcodeScanner(
-      'reader',
-      {
-        fps: 10,
-        qrbox: { width: 250, height: 250 },
-        rememberLastUsedCamera: true
-      },
-      false
-    );
-
-    // Déclenché dès qu'un QR code valide est décodé par la caméra
-    const onScanSuccess = async (decodedText: string) => {
-      if (isProcessingRef.current) return;
-      isProcessingRef.current = true;
-      
-      try {
-        // Arrêt propre du scanner avant le traitement pour éviter les doublons
-        await scanner.clear(); 
-        setScanResult(decodedText);
-        await handleKegProcess(decodedText);
-      } catch (err) {
-        console.error("Erreur lors de l'arrêt du scanner :", err);
-      } finally {
-        isProcessingRef.current = false;
-      }
-    };
-
-    const onScanFailure = (error: any) => {
-      // Ignoré pour ne pas surcharger la console pendant la recherche de focus
-      console.warn(`Scan en cours... ${error}`);
-    };
-
-    scanner.render(onScanSuccess, onScanFailure);
-
-    return () => {
-      scanner.clear().catch((err) => console.error("Erreur lors du nettoyage du scanner", err));
-    };
-  }, []); // Tableau de dépendances vide pour garantir une seule initialisation du scanner
-
   /**
    * Processus principal : Recherche du fût -> Mise à jour du fût -> Historisation du mouvement
+   * Enveloppé dans useCallback pour stabiliser la référence et satisfaire ESLint
    */
-  const handleKegProcess = async (qrToken: string) => {
+  const handleKegProcess = useCallback(async (qrToken: string) => {
     setIsLoading(true);
     setStatusMessage("Recherche du fût correspondant au QR code...");
     setErrorMessage(null);
@@ -113,13 +73,52 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [userId]); // Dépendance de userId car utilisé à l'intérieur
+
+  useEffect(() => {
+    // Initialisation du scanner de QR Code de la bibliothèque html5-qrcode
+    const scanner = new Html5QrcodeScanner(
+      'reader',
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        rememberLastUsedCamera: true
+      },
+      false
+    );
+
+    // Déclenché dès qu'un QR code valide est décodé par la caméra
+    const onScanSuccess = async (decodedText: string) => {
+      if (isProcessingRef.current) return;
+      isProcessingRef.current = true;
+      
+      try {
+        // Arrêt propre du scanner avant le traitement pour éviter les doublons
+        await scanner.clear(); 
+        setScanResult(decodedText);
+        await handleKegProcess(decodedText);
+      } catch (err) {
+        console.error("Erreur lors de l'arrêt du scanner :", err);
+      } finally {
+        isProcessingRef.current = false;
+      }
+    };
+
+    const onScanFailure = (error: any) => {
+      console.warn(`Scan en cours... ${error}`);
+    };
+
+    scanner.render(onScanSuccess, onScanFailure);
+
+    return () => {
+      scanner.clear().catch((err) => console.error("Erreur lors du nettoyage du scanner", err));
+    };
+  }, [handleKegProcess]); // Ajout de la dépendance stable pour valider ESLint
 
   return (
     <div style={{ padding: '20px', maxWidth: '500px', margin: '0 auto' }}>
       <h2 style={{ textAlign: 'center' }}>Scanner un Fût</h2>
       
-      {/* Conteneur d'affichage de la caméra */}
       <div id="reader" style={{ width: '100%', marginBottom: '20px' }}></div>
 
       {scanResult && (
@@ -146,7 +145,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
             setScanResult(null); 
             setStatusMessage(null); 
             setErrorMessage(null);
-            window.location.reload(); // Force le rechargement pour réinitialiser proprement la caméra HTML5
+            window.location.reload();
           }}
           style={{ width: '100%', padding: '10px', backgroundColor: '#001529', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
         >
