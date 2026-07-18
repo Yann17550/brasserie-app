@@ -12,35 +12,53 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  // États de diagnostic temporaires
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   
   const isProcessingRef = useRef<boolean>(false);
+
+  // Fonction utile pour nettoyer et comparer les URLs de manière identique
+  const normalizeUrl = (url: string): string => {
+    return url
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '') // Enlève http:// ou https://
+      .replace(/^www\./, '')       // Enlève www.
+      .replace(/\/$/, '');         // Enlève le slash final s'il existe
+  };
 
   const handleKegProcess = useCallback(async (qrToken: string) => {
     setIsLoading(true);
     setStatusMessage("Recherche du fût correspondant au QR code...");
     setErrorMessage(null);
 
-    const cleanToken = qrToken.trim();
-    // DIAGNOSTIC IMMÉDIAT : On affiche ce que le téléphone a lu
-    setDebugInfo(`Chaîne lue : "${cleanToken}" | Longueur : ${cleanToken.length} caractères`);
+    const scannedTokenClean = qrToken.trim();
+    const normalizedScanned = normalizeUrl(scannedTokenClean);
 
     try {
-      const { data: keg, error: fetchError } = await supabase
+      // 1. Récupération de tous les fûts pour trouver la correspondance normalisée
+      const { data: kegs, error: fetchError } = await supabase
         .from('kegs')
-        .select('*')
-        .eq('qr_code_token', cleanToken)
-        .single();
+        .select('*');
 
       if (fetchError) {
-        setErrorMessage(`Erreur Supabase (PGRST116) : Aucun fût trouvé pour ce jeton.`);
+        setErrorMessage("Erreur technique lors de la récupération des fûts.");
+        setDebugInfo(`Code : ${fetchError.code} | ${fetchError.message}`);
         return;
       }
 
+      // Recherche du fût dont l'URL normalisée correspond à celle du scan
+      const keg = kegs?.find(k => normalizeUrl(k.qr_code_token) === normalizedScanned);
+
+      if (!keg) {
+        setErrorMessage("Fût introuvable dans la base de données.");
+        setDebugInfo(`Lien scanné normalisé : "${normalizedScanned}"`);
+        return;
+      }
+
+      setDebugInfo(`Fût trouvé avec succès par correspondance flexible !`);
       setStatusMessage(`Fût identifié : ${keg.beer_type} (${keg.capacity_liters}L). Enregistrement du mouvement...`);
 
+      // 2. Mise à jour du statut du fût
       const { error: updateError } = await supabase
         .from('kegs')
         .update({ current_status: 'stock', updated_at: new Date().toISOString() })
@@ -48,9 +66,17 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
 
       if (updateError) throw new Error(updateError.message);
 
+      // 3. Insertion du mouvement dans l'historique
       const { error: movementError } = await supabase
         .from('keg_movements')
-        .insert([{ keg_id: keg.id, user_id: userId, movement_type: 'entrée_stock', notes: 'Entrée en stock automatique via scan mobile.' }]);
+        .insert([
+          {
+            keg_id: keg.id,
+            user_id: userId,
+            movement_type: 'entrée_stock',
+            notes: 'Entrée en stock automatique via scan mobile.'
+          }
+        ]);
 
       if (movementError) throw new Error(movementError.message);
 
@@ -61,6 +87,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       setIsLoading(false);
     }
   }, [userId]);
+
   useEffect(() => {
     const scanner = new Html5QrcodeScanner(
       'reader',
@@ -78,9 +105,8 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       
       try {
         await scanner.clear(); 
-        const cleanedText = decodedText.trim();
-        setScanResult(cleanedText);
-        await handleKegProcess(cleanedText);
+        setScanResult(decodedText.trim());
+        await handleKegProcess(decodedText);
       } catch (err) {
         console.error("Erreur scanner :", err);
       } finally {
@@ -123,7 +149,6 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         </div>
       )}
 
-      {/* Affichage du bloc de diagnostic si disponible */}
       {debugInfo && (
         <div style={{ padding: '10px', backgroundColor: '#fffbe6', border: '1px solid #ffe58f', borderRadius: '4px', color: '#d46b08', marginBottom: '15px', fontSize: '12px', fontFamily: 'monospace', wordBreak: 'break-all' }}>
           <strong>🔧 Info Diagnostic :</strong><br />
