@@ -1,5 +1,5 @@
 // src/components/KegScanner.tsx
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { supabase } from '../services/supabaseClient';
 import type { Client, EtatFut, Keg, MovementType } from '../types/app';
@@ -9,9 +9,15 @@ interface KegScannerProps {
   userId: string;
 }
 
+type KegWithCurrentState = Keg & {
+  current_movement_type: MovementType | null;
+  current_client_id: string | null;
+  current_etat_fut: EtatFut | null;
+};
+
 export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const [scanResult, setScanResult] = useState<string | null>(null);
-  const [identifiedKeg, setIdentifiedKeg] = useState<Keg | null>(null);
+  const [identifiedKeg, setIdentifiedKeg] = useState<KegWithCurrentState | null>(null);
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedMovementType, setSelectedMovementType] = useState<MovementType | ''>('');
   const [selectedEtatFut, setSelectedEtatFut] = useState<EtatFut | ''>('');
@@ -75,7 +81,18 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     try {
       const { data: matchedKeg, error: fetchError } = await supabase
         .from('kegs')
-        .select('id, qr_code_token, capacity_liters, beer_type, updated_at, brewery_name, keg_number')
+        .select(`
+          id,
+          qr_code_token,
+          capacity_liters,
+          beer_type,
+          updated_at,
+          brewery_name,
+          keg_number,
+          current_movement_type,
+          current_client_id,
+          current_etat_fut
+        `)
         .eq('qr_code_token', scannedValueClean)
         .maybeSingle();
 
@@ -92,17 +109,46 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       }
 
       setScanResult(scannedValueClean);
-      setIdentifiedKeg(matchedKeg);
+      setIdentifiedKeg(matchedKeg as KegWithCurrentState);
+      setSelectedMovementType('');
+      setSelectedEtatFut('');
+      setSelectedClientId('');
       setStatusMessage(
         `Fût identifié : ${matchedKeg.beer_type} ${matchedKeg.capacity_liters}L${matchedKeg.keg_number ? `, n° ${matchedKeg.keg_number}` : ''}.`
       );
-      setDebugInfo('Fût trouvé avec succès par correspondance exacte du QR code.');
+      setDebugInfo(
+        `Fût trouvé. État courant : movement_type="${matchedKeg.current_movement_type ?? 'null'}", etat_fut="${matchedKeg.current_etat_fut ?? 'null'}", client_id="${matchedKeg.current_client_id ?? 'null'}".`
+      );
     } catch (error: any) {
       setErrorMessage(error.message || 'Une erreur technique est survenue.');
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const availableMovementOptions = useMemo<MovementType[]>(() => {
+    if (!identifiedKeg?.current_movement_type) {
+      return ['stock', 'sorti'];
+    }
+
+    if (identifiedKeg.current_movement_type === 'stock') {
+      return ['sorti'];
+    }
+
+    if (identifiedKeg.current_movement_type === 'sorti') {
+      return ['stock'];
+    }
+
+    return ['stock', 'sorti'];
+  }, [identifiedKeg]);
+
+  const currentMovementLabel = useMemo(() => {
+    if (!identifiedKeg?.current_movement_type) {
+      return 'Non défini';
+    }
+
+    return identifiedKeg.current_movement_type === 'stock' ? 'En stock' : 'Sorti';
+  }, [identifiedKeg]);
 
   const handleSubmitMovement = useCallback(async () => {
     resetMessages();
@@ -114,6 +160,14 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
 
     if (!selectedMovementType) {
       setErrorMessage('Le type de mouvement est obligatoire.');
+      return;
+    }
+
+    if (identifiedKeg.current_movement_type === selectedMovementType) {
+      setErrorMessage('Ce mouvement est impossible car le fût est déjà dans cet état.');
+      setDebugInfo(
+        `Transition refusée : état courant="${identifiedKeg.current_movement_type}", mouvement demandé="${selectedMovementType}".`
+      );
       return;
     }
 
@@ -152,17 +206,43 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
 
       if (insertError) {
         setErrorMessage("Erreur lors de l'enregistrement du mouvement.");
-        setDebugInfo(`Code : ${insertError.code ?? 'N/A'} | ${insertError.message}`);
+        setDebugInfo(`Insert keg_movements | Code : ${insertError.code ?? 'N/A'} | ${insertError.message}`);
         return;
       }
 
+      const { error: updateError } = await supabase
+        .from('kegs')
+        .update({
+          current_movement_type: selectedMovementType,
+          current_client_id: clientIdToInsert,
+          current_etat_fut: etatFutToInsert,
+          last_movement_at: new Date().toISOString(),
+        })
+        .eq('id', identifiedKeg.id);
+
+      if (updateError) {
+        setErrorMessage("Le mouvement a été enregistré, mais la mise à jour de l'état courant du fût a échoué.");
+        setDebugInfo(`Update kegs | Code : ${updateError.code ?? 'N/A'} | ${updateError.message}`);
+        return;
+      }
+
+      setIdentifiedKeg((prev) =>
+        prev
+          ? {
+              ...prev,
+              current_movement_type: selectedMovementType,
+              current_client_id: clientIdToInsert,
+              current_etat_fut: etatFutToInsert,
+            }
+          : prev
+      );
       setMovementSaved(true);
       setStatusMessage('Succès ! Le mouvement du fût a été enregistré.');
       setDebugInfo(
-        `Mouvement enregistré : type="${selectedMovementType}", etat_fut="${etatFutToInsert}", client_id="${clientIdToInsert ?? 'null'}".`
+        `Historique + état courant mis à jour : type="${selectedMovementType}", etat_fut="${etatFutToInsert}", client_id="${clientIdToInsert ?? 'null'}".`
       );
     } catch (error: any) {
-      setErrorMessage(error.message || "Une erreur technique est survenue lors de l'insertion.");
+      setErrorMessage(error.message || "Une erreur technique est survenue lors de l'enregistrement.");
     } finally {
       setIsLoading(false);
     }
@@ -248,8 +328,11 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
               <p className="keg-scanner__scan-line">
                 <strong>Capacité :</strong> {identifiedKeg.capacity_liters}L
               </p>
-              <p className="keg-scanner__scan-line keg-scanner__scan-line--last">
+              <p className="keg-scanner__scan-line">
                 <strong>Numéro de fût :</strong> {identifiedKeg.keg_number ?? 'Non renseigné'}
+              </p>
+              <p className="keg-scanner__scan-line keg-scanner__scan-line--last">
+                <strong>Statut actuel :</strong> {currentMovementLabel}
               </p>
             </>
           )}
@@ -268,8 +351,11 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
               translate="no"
             >
               <option value="">Sélectionner un mouvement</option>
-              <option value="stock">En stock</option>
-              <option value="sorti">Sorti</option>
+              {availableMovementOptions.map((movementType) => (
+                <option key={movementType} value={movementType}>
+                  {movementType === 'stock' ? 'En stock' : 'Sorti'}
+                </option>
+              ))}
             </select>
           </div>
 
