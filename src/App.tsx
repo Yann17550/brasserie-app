@@ -7,6 +7,8 @@ import { Navigation } from './components/Navigation';
 import { Home } from './components/Home';
 import { KegScanner } from './components/KegScanner';
 import { StockCheck } from './components/StockCheck';
+import { KegIdentityCreator } from './components/KegIdentityCreator';
+import './App.css';
 
 function App() {
   const [session, setSession] = useState<any>(null);
@@ -58,7 +60,7 @@ function App() {
     // 2. Écoute les changements d'état de l'authentification (connexion/déconnexion)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!isMounted) return;
-      
+
       setSession(newSession);
       if (newSession?.user) {
         setLoading(true); // Re-bascule en chargement le temps de chasser le profil
@@ -93,27 +95,62 @@ function App() {
     return <Login onLoginSuccess={() => setCurrentPage('accueil')} />;
   }
 
+  const isAdmin = userProfile?.role === 'administrateur';
+
+  // Sécurité supplémentaire :
+  // on n'affiche l'application principale que si le profil est bien chargé.
+  if (!userProfile) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <h3>Chargement du profil utilisateur...</h3>
+      </div>
+    );
+  }
+
   // Rendu conditionnel des vues selon la page active
   return (
     <div>
-      <Navigation 
-        currentPage={currentPage} 
-        onPageChange={setCurrentPage} 
-        onLogout={handleLogout} 
+      <Navigation
+        currentPage={currentPage}
+        onPageChange={setCurrentPage}
+        onLogout={handleLogout}
+        userRole={userProfile.role}
       />
-      
+
       <main style={{ padding: '20px' }}>
         {currentPage === 'accueil' && (
           <Home userProfile={userProfile} onNavigate={setCurrentPage} />
         )}
-        
+
         {currentPage === 'scan_keg' && (
-          /* CORRECTION : On passe l'ID de l'opérateur connecté au scanner pour la table keg_movements */
           <KegScanner userId={session.user.id} />
         )}
-        
+
         {currentPage === 'check_stock' && (
           <StockCheck />
+        )}
+
+        {currentPage === 'create_keg_identity' && (
+          isAdmin ? (
+            <KegIdentityCreator />
+          ) : (
+            <div
+              style={{
+                maxWidth: '600px',
+                margin: '0 auto',
+                padding: '20px',
+                backgroundColor: '#fff1f0',
+                border: '1px solid #ffa39e',
+                borderRadius: '8px',
+                color: '#cf1322',
+              }}
+            >
+              <h2>Accès refusé</h2>
+              <p>
+                Cette interface de création d'identité de fût est réservée aux administrateurs.
+              </p>
+            </div>
+          )
         )}
       </main>
     </div>
