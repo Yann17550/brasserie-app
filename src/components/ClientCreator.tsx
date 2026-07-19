@@ -36,7 +36,6 @@ export const ClientCreator: React.FC = () => {
     }
 
     setIsLoading(true);
-    setStatusMessage('Création du client en cours...');
 
     const payload: ClientInsertPayload = {
       name: cleanedClientName,
