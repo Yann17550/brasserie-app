@@ -23,15 +23,6 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
 
   const isProcessingRef = useRef<boolean>(false);
 
-  const normalizeUrl = (url: string): string => {
-    return url
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, '')
-      .replace(/^www\./, '')
-      .replace(/\/$/, '');
-  };
-
   const resetMessages = () => {
     setStatusMessage(null);
     setErrorMessage(null);
@@ -70,25 +61,30 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     setStatusMessage('Recherche du fût correspondant au QR code...');
 
     const scannedValueClean = decodedText.trim();
-    const normalizedScanned = normalizeUrl(scannedValueClean);
+
+    if (!scannedValueClean) {
+      setErrorMessage('Le QR code scanné est vide.');
+      setDebugInfo('Aucune valeur exploitable n’a été extraite du scan.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const { data: kegs, error: fetchError } = await supabase
+      const { data: matchedKeg, error: fetchError } = await supabase
         .from('kegs')
-        .select('id, qr_code_token, capacity_liters, beer_type, updated_at, brewery_name, keg_number');
+        .select('id, qr_code_token, capacity_liters, beer_type, updated_at, brewery_name, keg_number')
+        .eq('qr_code_token', scannedValueClean)
+        .maybeSingle();
 
       if (fetchError) {
-        setErrorMessage("Erreur technique lors de la récupération des fûts.");
+        setErrorMessage("Erreur technique lors de la récupération du fût.");
         setDebugInfo(`Code : ${fetchError.code ?? 'N/A'} | ${fetchError.message}`);
         return;
       }
 
-      const matchedKeg =
-        kegs?.find((keg) => normalizeUrl(keg.qr_code_token) === normalizedScanned) ?? null;
-
       if (!matchedKeg) {
-        setErrorMessage("Fût introuvable dans la base de données.");
-        setDebugInfo(`Valeur scannée normalisée : "${normalizedScanned}"`);
+        setErrorMessage('Fût introuvable dans la base de données.');
+        setDebugInfo(`Valeur scannée exacte : "${scannedValueClean}"`);
         return;
       }
 
@@ -97,7 +93,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       setStatusMessage(
         `Fût identifié : ${matchedKeg.beer_type} ${matchedKeg.capacity_liters}L${matchedKeg.keg_number ? `, n° ${matchedKeg.keg_number}` : ''}.`
       );
-      setDebugInfo('Fût trouvé avec succès par correspondance d’URL normalisée.');
+      setDebugInfo('Fût trouvé avec succès par correspondance exacte du QR code.');
     } catch (error: any) {
       setErrorMessage(error.message || 'Une erreur technique est survenue.');
     } finally {

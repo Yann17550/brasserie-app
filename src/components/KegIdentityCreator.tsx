@@ -12,22 +12,6 @@ interface KegInsertPayload {
   keg_number: string;
 }
 
-// Règle métier :
-// tous les QR codes des fûts Easybeer doivent suivre ce motif exact,
-// seule la partie finale (token) varie.
-const qrCodeUrlRegex = /^https:\/\/app\.easybeer\.fr\/futs\/token\/([A-Za-z0-9_-]+)$/;
-
-const extractTokenFromUrl = (url: string): string | null => {
-  const trimmedUrl = url.trim();
-  const match = trimmedUrl.match(qrCodeUrlRegex);
-
-  if (!match) {
-    return null;
-  }
-
-  return match[1];
-};
-
 export const KegIdentityCreator: React.FC = () => {
   const [scannedUrl, setScannedUrl] = useState<string | null>(null);
   const [extractedToken, setExtractedToken] = useState<string | null>(null);
@@ -69,11 +53,10 @@ export const KegIdentityCreator: React.FC = () => {
       return;
     }
 
-    const token = extractTokenFromUrl(scannedUrl);
+    const cleanedScannedUrl = scannedUrl.trim();
 
-    if (!token) {
-      setErrorMessage("Le QR code scanné ne correspond pas au format Easybeer attendu.");
-      setDebugInfo(`URL scannée : ${scannedUrl}`);
+    if (!cleanedScannedUrl) {
+      setErrorMessage("Le contenu du QR code scanné est vide.");
       return;
     }
 
@@ -88,7 +71,7 @@ export const KegIdentityCreator: React.FC = () => {
     setStatusMessage("Création de l'identité du fût en cours...");
 
     const payload: KegInsertPayload = {
-      qr_code_token: token,
+      qr_code_token: cleanedScannedUrl,
       capacity_liters: capacityLiters,
       beer_type: beerType,
       brewery_name: breweryName,
@@ -121,7 +104,7 @@ export const KegIdentityCreator: React.FC = () => {
       setStatusMessage(
         `Fût créé avec succès : ${data.beer_type} ${data.capacity_liters}L, n° ${data.keg_number}.`
       );
-      setExtractedToken(token);
+      setExtractedToken(cleanedScannedUrl);
     } catch (error: any) {
       setErrorMessage(error.message || "Une erreur inattendue est survenue.");
     } finally {
@@ -152,15 +135,13 @@ export const KegIdentityCreator: React.FC = () => {
         await scanner.clear();
 
         const trimmedText = decodedText.trim();
-        const token = extractTokenFromUrl(trimmedText);
 
         setScannedUrl(trimmedText);
-        setExtractedToken(token);
+        setExtractedToken(trimmedText);
         resetMessages();
 
-        if (!token) {
-          setErrorMessage("QR code détecté, mais le format de l'URL n'est pas valide pour Easybeer.");
-          setDebugInfo(`Contenu scanné : ${trimmedText}`);
+        if (!trimmedText) {
+          setErrorMessage('QR code détecté, mais son contenu est vide.');
           return;
         }
 
@@ -206,11 +187,11 @@ export const KegIdentityCreator: React.FC = () => {
       {scannedUrl && (
         <div className="keg-identity-creator__scan-result">
           <p className="keg-identity-creator__scan-line">
-            <strong>URL détectée :</strong> {scannedUrl}
+            <strong>QR code détecté :</strong> {scannedUrl}
           </p>
 
           <p className="keg-identity-creator__scan-line keg-identity-creator__scan-line--last">
-            <strong>Token extrait :</strong> {extractedToken ?? 'Token invalide'}
+            <strong>Valeur enregistrée :</strong> {extractedToken ?? 'Valeur indisponible'}
           </p>
         </div>
       )}
@@ -287,9 +268,9 @@ export const KegIdentityCreator: React.FC = () => {
       <div className="keg-identity-creator__actions">
         <button
           onClick={handleCreateKeg}
-          disabled={!scannedUrl || !extractedToken || isLoading}
+          disabled={!scannedUrl || isLoading}
           className={`keg-identity-creator__button keg-identity-creator__button--primary ${
-            !scannedUrl || !extractedToken || isLoading
+            !scannedUrl || isLoading
               ? 'keg-identity-creator__button--disabled'
               : ''
           }`}
