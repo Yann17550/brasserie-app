@@ -114,21 +114,21 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
       return;
     }
 
-    if (selectedMovementType === 'en stock' && !selectedEtatFut) {
+    if (selectedMovementType === 'stock' && !selectedEtatFut) {
       setErrorMessage("L'état du fût est obligatoire pour un retour en stock.");
       return;
     }
 
-    if (selectedMovementType === 'En clientèle' && !selectedClientId) {
-      setErrorMessage('Le client est obligatoire pour un mouvement en clientèle.');
+    if (selectedMovementType === 'sorti' && !selectedClientId) {
+      setErrorMessage('Le client est obligatoire pour une sortie.');
       return;
     }
 
     const etatFutToInsert: EtatFut =
-      selectedMovementType === 'En clientèle' ? 'plein' : (selectedEtatFut as EtatFut);
+      selectedMovementType === 'sorti' ? 'plein' : (selectedEtatFut as EtatFut);
 
     const clientIdToInsert: string | null =
-      selectedMovementType === 'En clientèle' ? selectedClientId : null;
+      selectedMovementType === 'sorti' ? selectedClientId : null;
 
     setIsLoading(true);
     setStatusMessage('Enregistrement du mouvement en cours...');
@@ -209,12 +209,12 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   }, [findKegByScannedValue, scanResult]);
 
   useEffect(() => {
-    if (selectedMovementType === 'en stock') {
+    if (selectedMovementType === 'stock') {
       setSelectedClientId('');
       return;
     }
 
-    if (selectedMovementType === 'En clientèle') {
+    if (selectedMovementType === 'sorti') {
       setSelectedEtatFut('');
     }
   }, [selectedMovementType]);
@@ -261,14 +261,15 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
               onChange={(event) => setSelectedMovementType(event.target.value as MovementType | '')}
               disabled={isLoading}
               className="keg-scanner__input"
+              translate="no"
             >
               <option value="">Sélectionner un mouvement</option>
-              <option value="en stock">en stock</option>
-              <option value="En clientèle">En clientèle</option>
+              <option value="stock">En stock</option>
+              <option value="sorti">Sorti</option>
             </select>
           </div>
 
-          {selectedMovementType === 'en stock' && (
+          {selectedMovementType === 'stock' && (
             <div className="keg-scanner__field">
               <label className="keg-scanner__label">État du fût</label>
               <select
@@ -276,15 +277,16 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
                 onChange={(event) => setSelectedEtatFut(event.target.value as EtatFut | '')}
                 disabled={isLoading}
                 className="keg-scanner__input"
+                translate="no"
               >
                 <option value="">Sélectionner un état</option>
-                <option value="plein">plein</option>
-                <option value="vide">vide</option>
+                <option value="plein">Plein</option>
+                <option value="vide">Vide</option>
               </select>
             </div>
           )}
 
-          {selectedMovementType === 'En clientèle' && (
+          {selectedMovementType === 'sorti' && (
             <div className="keg-scanner__field">
               <label className="keg-scanner__label">Client</label>
               <select
@@ -301,8 +303,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
                 ))}
               </select>
               <p className="keg-scanner__hint">
-                Pour un mouvement en clientèle, l'état du fût est automatiquement enregistré à
-                "plein".
+                Pour une sortie, l'état du fût est automatiquement enregistré à "plein".
               </p>
             </div>
           )}

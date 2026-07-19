@@ -20,7 +20,7 @@ export interface Client {
 
 // Types de mouvements métier réellement utilisés dans l'application.
 // Règle métier : un fût est soit en stock, soit en clientèle.
-export type MovementType = 'en stock' | 'En clientèle';
+export type MovementType = 'stock' | 'sorti';
 
 // État physique du fût.
 export type EtatFut = 'plein' | 'vide';
