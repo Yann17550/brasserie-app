@@ -1,5 +1,5 @@
 // src/components/ClientCreator.tsx
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import './ClientCreator.css';
 
@@ -8,11 +8,11 @@ interface ClientInsertPayload {
 }
 
 export const ClientCreator: React.FC = () => {
-  const [clientName, setClientName] = useState<string>('');
+  const [clientName, setClientName] = useState('');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const resetMessages = () => {
     setStatusMessage(null);
@@ -22,10 +22,13 @@ export const ClientCreator: React.FC = () => {
 
   const resetForm = () => {
     setClientName('');
+    setIsLoading(false);
     resetMessages();
   };
 
-  const handleCreateClient = useCallback(async () => {
+  const handleCreateClient = async () => {
+    if (isLoading) return;
+
     resetMessages();
 
     const cleanedClientName = clientName.trim();
@@ -52,22 +55,23 @@ export const ClientCreator: React.FC = () => {
         if (error.code === '23505') {
           setErrorMessage('Création impossible : ce client existe déjà.');
           setDebugInfo(`Code SQL : ${error.code} | ${error.message}`);
-          return;
+        } else {
+          setErrorMessage("Erreur technique lors de la création du client.");
+          setDebugInfo(`Code : ${error.code ?? 'N/A'} | ${error.message}`);
         }
 
-        setErrorMessage("Erreur technique lors de la création du client.");
-        setDebugInfo(`Code : ${error.code ?? 'N/A'} | ${error.message}`);
+        setIsLoading(false);
         return;
       }
 
       setStatusMessage(`Client créé avec succès : ${data.name}.`);
       setClientName('');
+      setIsLoading(false);
     } catch (error: any) {
       setErrorMessage(error.message || 'Une erreur inattendue est survenue.');
-    } finally {
       setIsLoading(false);
     }
-  }, [clientName]);
+  };
 
   return (
     <div className="client-creator">
@@ -119,21 +123,19 @@ export const ClientCreator: React.FC = () => {
 
       <div className="client-creator__actions">
         <button
+          type="button"
           onClick={handleCreateClient}
           disabled={isLoading}
-          className={`client-creator__button client-creator__button--primary ${
-            isLoading ? 'client-creator__button--disabled' : ''
-          }`}
+          className="client-creator__button client-creator__button--primary"
         >
           {isLoading ? 'Création en cours...' : 'Créer le client'}
         </button>
 
         <button
+          type="button"
           onClick={resetForm}
-          disabled={isLoading}
-          className={`client-creator__button client-creator__button--secondary ${
-            isLoading ? 'client-creator__button--disabled' : ''
-          }`}
+          disabled={false}
+          className="client-creator__button client-creator__button--secondary"
         >
           Réinitialiser
         </button>
