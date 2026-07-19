@@ -12,6 +12,22 @@ interface KegInsertPayload {
   keg_number: string;
 }
 
+// Règle métier :
+// tous les QR codes des fûts Easybeer doivent suivre ce motif exact,
+// seule la partie finale (token) varie.
+const qrCodeUrlRegex = /^https:\/\/app\.easybeer\.fr\/futs\/token\/([A-Za-z0-9_-]+)$/;
+
+const extractTokenFromUrl = (url: string): string | null => {
+  const trimmedUrl = url.trim();
+  const match = trimmedUrl.match(qrCodeUrlRegex);
+
+  if (!match) {
+    return null;
+  }
+
+  return match[1];
+};
+
 export const KegIdentityCreator: React.FC = () => {
   const [scannedUrl, setScannedUrl] = useState<string | null>(null);
   const [extractedToken, setExtractedToken] = useState<string | null>(null);
@@ -24,11 +40,6 @@ export const KegIdentityCreator: React.FC = () => {
 
   const isProcessingRef = useRef<boolean>(false);
 
-  // Règle métier :
-  // tous les QR codes des fûts Easybeer doivent suivre ce motif exact,
-  // seule la partie finale (token) varie.
-  const qrCodeUrlRegex = /^https:\/\/app\.easybeer\.fr\/futs\/token\/([A-Za-z0-9_-]+)$/;
-
   // Valeurs métier confirmées
   const breweryName = 'Br. Île & Elle';
   const capacityLiters = 20;
@@ -38,17 +49,6 @@ export const KegIdentityCreator: React.FC = () => {
     setStatusMessage(null);
     setErrorMessage(null);
     setDebugInfo(null);
-  };
-
-  const extractTokenFromUrl = (url: string): string | null => {
-    const trimmedUrl = url.trim();
-    const match = trimmedUrl.match(qrCodeUrlRegex);
-
-    if (!match) {
-      return null;
-    }
-
-    return match[1];
   };
 
   const resetFormForNextCreation = () => {
@@ -181,7 +181,7 @@ export const KegIdentityCreator: React.FC = () => {
 
     return () => {
       scanner.clear().catch((err) => {
-        console.error("Erreur lors du nettoyage du scanner", err);
+        console.error('Erreur lors du nettoyage du scanner', err);
       });
     };
   }, [isScannerReady, scannedUrl]);
