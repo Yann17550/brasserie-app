@@ -2,7 +2,6 @@
 import React from 'react';
 import { ActivePage, UserRole } from '../types/app';
 
-
 interface NavigationProps {
   currentPage: ActivePage;
   onPageChange: (page: ActivePage) => void;
@@ -10,21 +9,19 @@ interface NavigationProps {
   userRole: UserRole;
 }
 
-
 export const Navigation: React.FC<NavigationProps> = ({
   currentPage,
   onPageChange,
   onLogout,
   userRole,
 }) => {
-  // Liste des liens de navigation principaux, visibles par tous les rôles
   const navItems: { page: ActivePage; label: string }[] = [
     { page: 'accueil', label: 'Accueil' },
     { page: 'scan_keg', label: 'Scanner un fût' },
     { page: 'check_stock', label: 'Voir le stock' },
+    { page: 'clients', label: 'Créer un client' },
   ];
 
-  // Lien admin-only : création d'identité de fût
   const isAdmin = userRole === 'administrateur';
 
   return (
@@ -45,7 +42,6 @@ export const Navigation: React.FC<NavigationProps> = ({
           </li>
         ))}
 
-        {/* Lien admin-only :visible uniquement si l'utilisateur est administrateur */}
         {isAdmin && (
           <li>
             <button

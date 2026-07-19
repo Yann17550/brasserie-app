@@ -8,6 +8,7 @@ import { Home } from './components/Home';
 import { KegScanner } from './components/KegScanner';
 import { StockCheck } from './components/StockCheck';
 import { KegIdentityCreator } from './components/KegIdentityCreator';
+import { ClientCreator } from './components/ClientCreator';
 import './App.css';
 
 function App() {
@@ -16,7 +17,6 @@ function App() {
   const [currentPage, setCurrentPage] = useState<ActivePage>('accueil');
   const [loading, setLoading] = useState(true);
 
-  // Récupère le profil et le rôle de l'utilisateur depuis la table réelle 'users_profile'
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -37,7 +37,6 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
-    // 1. Vérification de la session existante au premier chargement de manière séquentielle
     const initializeAuth = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
@@ -57,13 +56,12 @@ function App() {
 
     initializeAuth();
 
-    // 2. Écoute les changements d'état de l'authentification (connexion/déconnexion)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
       if (!isMounted) return;
 
       setSession(newSession);
       if (newSession?.user) {
-        setLoading(true); // Re-bascule en chargement le temps de chasser le profil
+        setLoading(true);
         fetchUserProfile(newSession.user.id);
       } else {
         setUserProfile(null);
@@ -90,15 +88,12 @@ function App() {
     );
   }
 
-  // Si l'utilisateur n'est pas connecté, on lui affiche l'écran de Login
   if (!session) {
     return <Login onLoginSuccess={() => setCurrentPage('accueil')} />;
   }
 
   const isAdmin = userProfile?.role === 'administrateur';
 
-  // Sécurité supplémentaire :
-  // on n'affiche l'application principale que si le profil est bien chargé.
   if (!userProfile) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
@@ -107,7 +102,6 @@ function App() {
     );
   }
 
-  // Rendu conditionnel des vues selon la page active
   return (
     <div>
       <Navigation
@@ -128,6 +122,10 @@ function App() {
 
         {currentPage === 'check_stock' && (
           <StockCheck />
+        )}
+
+        {currentPage === 'clients' && (
+          <ClientCreator />
         )}
 
         {currentPage === 'create_keg_identity' && (

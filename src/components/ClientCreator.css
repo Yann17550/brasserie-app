@@ -1,0 +1,99 @@
+.client-creator {
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.client-creator__title {
+  margin-bottom: 16px;
+}
+
+.client-creator__info-box {
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.client-creator__info-text {
+  margin: 0;
+}
+
+.client-creator__form-card {
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.client-creator__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.client-creator__label {
+  font-weight: 600;
+}
+
+.client-creator__input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #cfcfcf;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.client-creator__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.client-creator__button {
+  cursor: pointer;
+  padding: 10px 14px;
+  border-radius: 6px;
+}
+
+.client-creator__button--primary {
+  background-color: #001529;
+  color: #ffffff;
+  border: none;
+}
+
+.client-creator__button--secondary {
+  background-color: #f5f5f5;
+  color: #222222;
+  border: 1px solid #d9d9d9;
+}
+
+.client-creator__button--disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.client-creator__message {
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+}
+
+.client-creator__message--status {
+  background-color: #f6ffed;
+  border: 1px solid #b7eb8f;
+  color: #135200;
+}
+
+.client-creator__message--error {
+  background-color: #fff2f0;
+  border: 1px solid #ffccc7;
+  color: #a8071a;
+}
+
+.client-creator__message--debug {
+  background-color: #fafafa;
+  border: 1px solid #d9d9d9;
+  color: #434343;
+}
