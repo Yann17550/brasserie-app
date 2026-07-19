@@ -9,6 +9,7 @@ import { KegScanner } from './components/KegScanner';
 import { StockCheck } from './components/StockCheck';
 import { KegIdentityCreator } from './components/KegIdentityCreator';
 import { ClientCreator } from './components/ClientCreator';
+import { AdminOptions } from './components/AdminOptions';
 import './App.css';
 
 function App() {
@@ -120,12 +121,50 @@ function App() {
           <KegScanner userId={session.user.id} />
         )}
 
-        {currentPage === 'check_stock' && (
-          <StockCheck />
-        )}
-
         {currentPage === 'clients' && (
           <ClientCreator />
+        )}
+
+        {currentPage === 'check_stock' && (
+          isAdmin ? (
+            <StockCheck />
+          ) : (
+            <div
+              style={{
+                maxWidth: '600px',
+                margin: '0 auto',
+                padding: '20px',
+                backgroundColor: '#fff1f0',
+                border: '1px solid #ffa39e',
+                borderRadius: '8px',
+                color: '#cf1322',
+              }}
+            >
+              <h2>Accès refusé</h2>
+              <p>Cette interface est réservée aux administrateurs.</p>
+            </div>
+          )
+        )}
+
+        {currentPage === 'admin_options' && (
+          isAdmin ? (
+            <AdminOptions onNavigate={setCurrentPage} />
+          ) : (
+            <div
+              style={{
+                maxWidth: '600px',
+                margin: '0 auto',
+                padding: '20px',
+                backgroundColor: '#fff1f0',
+                border: '1px solid #ffa39e',
+                borderRadius: '8px',
+                color: '#cf1322',
+              }}
+            >
+              <h2>Accès refusé</h2>
+              <p>Cette interface est réservée aux administrateurs.</p>
+            </div>
+          )
         )}
 
         {currentPage === 'create_keg_identity' && (
@@ -147,6 +186,41 @@ function App() {
               <p>
                 Cette interface de création d'identité de fût est réservée aux administrateurs.
               </p>
+            </div>
+          )
+        )}
+
+        {currentPage === 'create_user' && (
+          isAdmin ? (
+            <div
+              style={{
+                maxWidth: '760px',
+                margin: '0 auto',
+                padding: '20px',
+                backgroundColor: '#f9f9f9',
+                border: '1px solid #d9d9d9',
+                borderRadius: '10px',
+              }}
+            >
+              <h2 style={{ marginTop: 0 }}>Créer un utilisateur</h2>
+              <p style={{ marginBottom: 0 }}>
+                Cette page est prête côté visuel. Le branchement réel avec Supabase sera ajouté ensuite.
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                maxWidth: '600px',
+                margin: '0 auto',
+                padding: '20px',
+                backgroundColor: '#fff1f0',
+                border: '1px solid #ffa39e',
+                borderRadius: '8px',
+                color: '#cf1322',
+              }}
+            >
+              <h2>Accès refusé</h2>
+              <p>Cette interface est réservée aux administrateurs.</p>
             </div>
           )
         )}

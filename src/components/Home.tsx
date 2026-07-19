@@ -48,7 +48,7 @@ export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate }) => {
         </button>
 
         <button
-          onClick={() => onNavigate('check_stock')}
+          onClick={() => onNavigate('clients')}
           style={{
             padding: '20px',
             fontSize: '16px',
@@ -59,7 +59,7 @@ export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate }) => {
             color: '#28a745',
           }}
         >
-          📦 Consulter le stock
+          👥 Créer un client
         </button>
       </div>
 
@@ -68,33 +68,32 @@ export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate }) => {
           style={{
             marginTop: '30px',
             padding: '20px',
-            border: '1px dashed #dc3545',
+            border: '1px dashed #722ed1',
             borderRadius: '6px',
-            backgroundColor: '#fff5f5',
+            backgroundColor: '#faf5ff',
           }}
         >
-          <h4 style={{ color: '#dc3545', marginTop: 0, marginBottom: '10px' }}>
+          <h4 style={{ color: '#531dab', marginTop: 0, marginBottom: '10px' }}>
             Options Administrateur
           </h4>
 
           <p style={{ fontSize: '14px', marginBottom: '15px' }}>
-            Cette zone regroupe les fonctionnalités réservées à l’administration de la
-            brasserie.
+            Les outils d’administration ont été regroupés dans un espace dédié pour alléger le menu principal.
           </p>
 
           <button
-            onClick={() => onNavigate('create_keg_identity')}
+            onClick={() => onNavigate('admin_options')}
             style={{
               padding: '12px 16px',
               fontSize: '15px',
               cursor: 'pointer',
               borderRadius: '8px',
-              border: '1px solid #dc3545',
+              border: '1px solid #722ed1',
               backgroundColor: '#fff',
-              color: '#dc3545',
+              color: '#531dab',
             }}
           >
-            ➕ Créer une identité de fût
+            Ouvrir les options administrateur
           </button>
         </div>
       )}

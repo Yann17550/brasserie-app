@@ -15,18 +15,34 @@ export const Navigation: React.FC<NavigationProps> = ({
   onLogout,
   userRole,
 }) => {
+  const isAdmin = userRole === 'administrateur';
+
   const navItems: { page: ActivePage; label: string }[] = [
     { page: 'accueil', label: 'Accueil' },
     { page: 'scan_keg', label: 'Scanner un fût' },
-    { page: 'check_stock', label: 'Voir le stock' },
     { page: 'clients', label: 'Créer un client' },
   ];
 
-  const isAdmin = userRole === 'administrateur';
-
   return (
-    <nav style={{ padding: '10px', backgroundColor: '#f5f5f5', marginBottom: '20px' }}>
-      <ul style={{ display: 'flex', listStyle: 'none', gap: '15px', margin: 0, padding: 0, alignItems: 'center' }}>
+    <nav
+      style={{
+        padding: '10px 16px',
+        backgroundColor: '#f5f5f5',
+        marginBottom: '20px',
+        borderBottom: '1px solid #e5e5e5',
+      }}
+    >
+      <ul
+        style={{
+          display: 'flex',
+          listStyle: 'none',
+          gap: '12px',
+          margin: 0,
+          padding: 0,
+          alignItems: 'center',
+          flexWrap: 'wrap',
+        }}
+      >
         {navItems.map((item) => (
           <li key={item.page}>
             <button
@@ -34,7 +50,11 @@ export const Navigation: React.FC<NavigationProps> = ({
               style={{
                 fontWeight: currentPage === item.page ? 'bold' : 'normal',
                 cursor: 'pointer',
-                padding: '5px 10px',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: currentPage === item.page ? '1px solid #1677ff' : '1px solid #d9d9d9',
+                backgroundColor: currentPage === item.page ? '#e6f4ff' : '#ffffff',
+                color: '#1f1f1f',
               }}
             >
               {item.label}
@@ -45,18 +65,18 @@ export const Navigation: React.FC<NavigationProps> = ({
         {isAdmin && (
           <li>
             <button
-              onClick={() => onPageChange('create_keg_identity')}
+              onClick={() => onPageChange('admin_options')}
               style={{
-                fontWeight: currentPage === 'create_keg_identity' ? 'bold' : 'normal',
+                fontWeight: currentPage === 'admin_options' ? 'bold' : 'normal',
                 cursor: 'pointer',
-                padding: '5px 10px',
-                backgroundColor: '#001529',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                border: '1px solid #722ed1',
+                backgroundColor: currentPage === 'admin_options' ? '#f9f0ff' : '#ffffff',
+                color: '#531dab',
               }}
             >
-              Créer un fût
+              Options administrateur
             </button>
           </li>
         )}
@@ -66,11 +86,11 @@ export const Navigation: React.FC<NavigationProps> = ({
             onClick={onLogout}
             style={{
               cursor: 'pointer',
-              padding: '5px 10px',
-              backgroundColor: '#ff4d4d',
+              padding: '8px 12px',
+              backgroundColor: '#ff4d4f',
               color: '#fff',
               border: 'none',
-              borderRadius: '4px',
+              borderRadius: '6px',
             }}
           >
             Déconnexion
