@@ -210,7 +210,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         return;
       }
 
-      const { error: updateError } = await supabase
+      const { data: updatedKeg, error: updateError } = await supabase
         .from('kegs')
         .update({
           current_movement_type: selectedMovementType,
@@ -218,11 +218,18 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
           current_etat_fut: etatFutToInsert,
           last_movement_at: new Date().toISOString(),
         })
-        .eq('id', identifiedKeg.id);
+        .eq('id', identifiedKeg.id)
+        .select('id, current_movement_type, current_client_id, current_etat_fut, last_movement_at');
 
       if (updateError) {
         setErrorMessage("Le mouvement a été enregistré, mais la mise à jour de l'état courant du fût a échoué.");
         setDebugInfo(`Update kegs | Code : ${updateError.code ?? 'N/A'} | ${updateError.message}`);
+        return;
+      }
+
+      if (!updatedKeg || updatedKeg.length === 0) {
+        setErrorMessage("Le mouvement a été enregistré, mais aucune ligne de la table kegs n'a été mise à jour.");
+        setDebugInfo(`Update kegs vide | keg.id="${identifiedKeg.id}" | aucun enregistrement modifié`);
         return;
       }
 
