@@ -234,9 +234,11 @@ export const KegIdentityCreator: React.FC = () => {
           <input
             id="keg-number"
             type="text"
+            inputMode="numeric"
+            pattern="[0-9]*"
             value={kegNumber}
-            onChange={(event) => setKegNumber(event.target.value)}
-            placeholder="Exemple : FUT-001"
+            onChange={(event) => setKegNumber(event.target.value.replace(/\D/g, ''))}
+            placeholder="Exemple : 1"
             disabled={!scannedUrl || isLoading}
             className={`keg-identity-creator__input ${
               !scannedUrl ? 'keg-identity-creator__input--readonly' : ''
