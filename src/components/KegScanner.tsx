@@ -309,6 +309,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
           )}
 
           <button
+            type="button"
             onClick={handleSubmitMovement}
             disabled={!identifiedKeg || !selectedMovementType || isLoading}
             className={`keg-scanner__button keg-scanner__button--primary ${
@@ -316,8 +317,9 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
                 ? 'keg-scanner__button--disabled'
                 : ''
             }`}
+            translate="no"
           >
-            {isLoading ? 'Enregistrement en cours...' : 'Enregistrer le mouvement'}
+            Enregistrer le mouvement
           </button>
         </div>
       )}
