@@ -20,6 +20,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [movementSaved, setMovementSaved] = useState<boolean>(false);
 
   const isProcessingRef = useRef<boolean>(false);
 
@@ -38,6 +39,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
     setStatusMessage(null);
     setErrorMessage(null);
     setDebugInfo(null);
+    setMovementSaved(false);
   };
 
   const loadClients = useCallback(async () => {
@@ -58,6 +60,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
   const findKegByScannedValue = useCallback(async (decodedText: string) => {
     setIsLoading(true);
     resetMessages();
+    setMovementSaved(false);
     setStatusMessage('Recherche du fût correspondant au QR code...');
 
     const scannedValueClean = decodedText.trim();
@@ -153,6 +156,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         return;
       }
 
+      setMovementSaved(true);
       setStatusMessage('Succès ! Le mouvement du fût a été enregistré.');
       setDebugInfo(
         `Mouvement enregistré : type="${selectedMovementType}", etat_fut="${etatFutToInsert}", client_id="${clientIdToInsert ?? 'null'}".`
@@ -252,7 +256,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
         </div>
       )}
 
-      {identifiedKeg && (
+      {identifiedKeg && !movementSaved && (
         <div className="keg-scanner__form-card">
           <div className="keg-scanner__field">
             <label className="keg-scanner__label">Type de mouvement</label>
@@ -346,6 +350,7 @@ export const KegScanner: React.FC<KegScannerProps> = ({ userId }) => {
 
       {!isLoading && scanResult && (
         <button
+          type="button"
           onClick={resetFormState}
           className="keg-scanner__button keg-scanner__button--restart"
         >
