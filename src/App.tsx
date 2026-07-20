@@ -6,10 +6,13 @@ import { Login } from './components/Login';
 import { Navigation } from './components/Navigation';
 import { Home } from './components/Home';
 import { KegScanner } from './components/KegScanner';
-import { StockCheck } from './components/StockCheck';
+import  StockCheck  from './components/StockCheck';
 import { KegIdentityCreator } from './components/KegIdentityCreator';
 import { ClientCreator } from './components/ClientCreator';
 import { AdminOptions } from './components/AdminOptions';
+import { CreateUser } from './components/CreateUser';
+import { ForgotPassword } from './components/ForgotPassword';
+import { UpdatePassword } from './components/UpdatePassword';
 import './App.css';
 
 function App() {
@@ -17,6 +20,7 @@ function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [currentPage, setCurrentPage] = useState<ActivePage>('accueil');
   const [loading, setLoading] = useState(true);
+  const [recoveryReady, setRecoveryReady] = useState(false);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -40,10 +44,54 @@ function App() {
 
     const initializeAuth = async () => {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const pathname = window.location.pathname;
+        const searchParams = new URLSearchParams(window.location.search);
+        const code = searchParams.get('code');
+
+        if (pathname === '/update-password') {
+          setCurrentPage('update_password');
+
+          if (code) {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+            if (error) {
+              console.error('Erreur exchangeCodeForSession:', error);
+              if (isMounted) {
+                setRecoveryReady(false);
+                setLoading(false);
+              }
+              return;
+            }
+
+            if (!isMounted) return;
+
+            setSession(data.session);
+            setRecoveryReady(true);
+            setLoading(false);
+            window.history.replaceState({}, document.title, '/update-password');
+            return;
+          }
+
+          const {
+            data: { session: existingRecoverySession },
+          } = await supabase.auth.getSession();
+
+          if (!isMounted) return;
+
+          setSession(existingRecoverySession);
+          setRecoveryReady(!!existingRecoverySession);
+          setLoading(false);
+          return;
+        }
+
+        const {
+          data: { session: currentSession },
+        } = await supabase.auth.getSession();
+
         if (!isMounted) return;
 
         setSession(currentSession);
+
         if (currentSession?.user) {
           await fetchUserProfile(currentSession.user.id);
         } else {
@@ -57,15 +105,34 @@ function App() {
 
     initializeAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, newSession) => {
       if (!isMounted) return;
 
+      if (event === 'PASSWORD_RECOVERY') {
+        setSession(newSession);
+        setRecoveryReady(!!newSession);
+        setCurrentPage('update_password');
+        setLoading(false);
+        return;
+      }
+
       setSession(newSession);
+
+      if (window.location.pathname === '/update-password') {
+        setRecoveryReady(!!newSession);
+        setCurrentPage('update_password');
+        setLoading(false);
+        return;
+      }
+
       if (newSession?.user) {
         setLoading(true);
         fetchUserProfile(newSession.user.id);
       } else {
         setUserProfile(null);
+        setRecoveryReady(false);
         setLoading(false);
       }
     });
@@ -79,25 +146,59 @@ function App() {
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentPage('accueil');
+    setUserProfile(null);
+    setRecoveryReady(false);
   };
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
         <h3>Chargement de l'application...</h3>
       </div>
     );
   }
 
+  if (currentPage === 'update_password') {
+    return (
+      <UpdatePassword
+        onBackToLogin={() => setCurrentPage('accueil')}
+        recoveryReady={recoveryReady}
+      />
+    );
+  }
+
   if (!session) {
-    return <Login onLoginSuccess={() => setCurrentPage('accueil')} />;
+    if (currentPage === 'forgot_password') {
+      return <ForgotPassword onBackToLogin={() => setCurrentPage('accueil')} />;
+    }
+
+    return (
+      <Login
+        onLoginSuccess={() => setCurrentPage('accueil')}
+        onForgotPassword={() => setCurrentPage('forgot_password')}
+      />
+    );
   }
 
   const isAdmin = userProfile?.role === 'administrateur';
 
   if (!userProfile) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+        }}
+      >
         <h3>Chargement du profil utilisateur...</h3>
       </div>
     );
@@ -117,16 +218,12 @@ function App() {
           <Home userProfile={userProfile} onNavigate={setCurrentPage} />
         )}
 
-        {currentPage === 'scan_keg' && (
-          <KegScanner userId={session.user.id} />
-        )}
+        {currentPage === 'scan_keg' && <KegScanner userId={session.user.id} />}
 
-        {currentPage === 'clients' && (
-          <ClientCreator />
-        )}
+        {currentPage === 'clients' && <ClientCreator />}
 
-        {currentPage === 'check_stock' && (
-          isAdmin ? (
+        {currentPage === 'check_stock' &&
+          (isAdmin ? (
             <StockCheck />
           ) : (
             <div
@@ -143,11 +240,10 @@ function App() {
               <h2>Accès refusé</h2>
               <p>Cette interface est réservée aux administrateurs.</p>
             </div>
-          )
-        )}
+          ))}
 
-        {currentPage === 'admin_options' && (
-          isAdmin ? (
+        {currentPage === 'admin_options' &&
+          (isAdmin ? (
             <AdminOptions onNavigate={setCurrentPage} />
           ) : (
             <div
@@ -164,11 +260,10 @@ function App() {
               <h2>Accès refusé</h2>
               <p>Cette interface est réservée aux administrateurs.</p>
             </div>
-          )
-        )}
+          ))}
 
-        {currentPage === 'create_keg_identity' && (
-          isAdmin ? (
+        {currentPage === 'create_keg_identity' &&
+          (isAdmin ? (
             <KegIdentityCreator />
           ) : (
             <div
@@ -187,26 +282,11 @@ function App() {
                 Cette interface de création d'identité de fût est réservée aux administrateurs.
               </p>
             </div>
-          )
-        )}
+          ))}
 
-        {currentPage === 'create_user' && (
-          isAdmin ? (
-            <div
-              style={{
-                maxWidth: '760px',
-                margin: '0 auto',
-                padding: '20px',
-                backgroundColor: '#f9f9f9',
-                border: '1px solid #d9d9d9',
-                borderRadius: '10px',
-              }}
-            >
-              <h2 style={{ marginTop: 0 }}>Créer un utilisateur</h2>
-              <p style={{ marginBottom: 0 }}>
-                Cette page est prête côté visuel. Le branchement réel avec Supabase sera ajouté ensuite.
-              </p>
-            </div>
+        {currentPage === 'create_user' &&
+          (isAdmin ? (
+            <CreateUser />
           ) : (
             <div
               style={{
@@ -222,8 +302,7 @@ function App() {
               <h2>Accès refusé</h2>
               <p>Cette interface est réservée aux administrateurs.</p>
             </div>
-          )
-        )}
+          ))}
       </main>
     </div>
   );

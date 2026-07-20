@@ -4,9 +4,10 @@ import { supabase } from '../services/supabaseClient';
 
 interface LoginProps {
   onLoginSuccess: () => void;
+  onForgotPassword: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onForgotPassword }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,10 +18,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     setLoading(true);
     setError(null);
 
-    // Normalisation de l'email pour éviter les problèmes de casse
     const cleanedEmail = email.trim().toLowerCase();
 
-    // Validation des entrées
     if (!cleanedEmail || !password) {
       setError('Veuillez remplir tous les champs.');
       setLoading(false);
@@ -28,7 +27,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
     }
 
     try {
-      // Tentative de connexion via l'API d'authentification Supabase
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: cleanedEmail,
         password: password,
@@ -36,10 +34,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       if (authError) throw authError;
 
-      // Déclenchement du callback en cas de succès
       onLoginSuccess();
     } catch (err: any) {
-      // Traduction des erreurs communes pour l'utilisateur
       if (err.message === 'Invalid login credentials') {
         setError('Identifiants ou mot de passe incorrects.');
       } else {
@@ -53,7 +49,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   return (
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
       <h2>Connexion Brasserie</h2>
-      
+
       {error && (
         <div style={{ color: 'red', marginBottom: '15px', padding: '10px', backgroundColor: '#ffe6e6', borderRadius: '4px' }}>
           {error}
@@ -62,7 +58,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
       <form onSubmit={handleLogin}>
         <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>Adresse e-mail :</label>
+          <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>
+            Adresse e-mail :
+          </label>
           <input
             id="email"
             type="email"
@@ -75,8 +73,10 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           />
         </div>
 
-        <div style={{ marginBottom: '20px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>Mot de passe :</label>
+        <div style={{ marginBottom: '12px' }}>
+          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
+            Mot de passe :
+          </label>
           <input
             id="password"
             type="password"
@@ -89,9 +89,35 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           />
         </div>
 
+        <div style={{ marginBottom: '20px', textAlign: 'right' }}>
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            disabled={loading}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#1677ff',
+              cursor: 'pointer',
+              padding: 0,
+              fontSize: '14px',
+            }}
+          >
+            Mot de passe oublié ?
+          </button>
+        </div>
+
         <button
           type="submit"
-          style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+          style={{
+            width: '100%',
+            padding: '10px',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
           disabled={loading}
         >
           {loading ? 'Connexion en cours...' : 'Se connecter'}

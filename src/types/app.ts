@@ -53,4 +53,6 @@ export type ActivePage =
   | 'check_stock'
   | 'create_keg_identity'
   | 'admin_options'
-  | 'create_user';
+  | 'create_user'
+  | 'forgot_password'
+  | 'update_password';
