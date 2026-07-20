@@ -1,4 +1,3 @@
-// src/App.tsx
 import React, { useEffect, useState } from 'react';
 import { supabase } from './services/supabaseClient';
 import { UserProfile, ActivePage } from './types/app';
@@ -6,7 +5,7 @@ import { Login } from './components/Login';
 import { Navigation } from './components/Navigation';
 import { Home } from './components/Home';
 import { KegScanner } from './components/KegScanner';
-import  StockCheck  from './components/StockCheck';
+import StockCheck from './components/StockCheck';
 import { KegIdentityCreator } from './components/KegIdentityCreator';
 import { ClientCreator } from './components/ClientCreator';
 import { AdminOptions } from './components/AdminOptions';
@@ -22,6 +21,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [recoveryReady, setRecoveryReady] = useState(false);
 
+  // Charge le profil métier lié à l'utilisateur connecté.
+  // On garde cette étape séparée car l'utilisateur Supabase Auth ne contient pas
+  // toutes les infos nécessaires à l'application (nom complet, rôle).
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -31,9 +33,10 @@ function App() {
         .single();
 
       if (error) throw error;
+
       setUserProfile(data as UserProfile);
     } catch (err) {
-      console.error("Erreur lors de la récupération du profil :", err);
+      console.error('Erreur lors de la récupération du profil :', err);
     } finally {
       setLoading(false);
     }
@@ -42,6 +45,9 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
+    // Initialise l'état d'authentification au chargement de l'application.
+    // Cette partie gère aussi le cas particulier du reset de mot de passe,
+    // où Supabase peut renvoyer un code dans l'URL à échanger contre une session.
     const initializeAuth = async () => {
       try {
         const pathname = window.location.pathname;
@@ -55,11 +61,13 @@ function App() {
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
             if (error) {
-              console.error('Erreur exchangeCodeForSession:', error);
+              console.error('Erreur exchangeCodeForSession :', error);
+
               if (isMounted) {
                 setRecoveryReady(false);
                 setLoading(false);
               }
+
               return;
             }
 
@@ -68,6 +76,9 @@ function App() {
             setSession(data.session);
             setRecoveryReady(true);
             setLoading(false);
+
+            // Nettoie l'URL après échange du code pour éviter de le conserver
+            // dans la barre d'adresse.
             window.history.replaceState({}, document.title, '/update-password');
             return;
           }
@@ -98,13 +109,18 @@ function App() {
           setLoading(false);
         }
       } catch (err) {
-        console.error("Erreur d'initialisation auth:", err);
-        if (isMounted) setLoading(false);
+        console.error("Erreur d'initialisation auth :", err);
+
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
+    // Écoute les changements de session en temps réel :
+    // connexion, déconnexion, récupération de mot de passe, etc.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
@@ -143,12 +159,32 @@ function App() {
     };
   }, []);
 
+  // Déconnecte l'utilisateur et remet l'interface dans son état initial.
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentPage('accueil');
     setUserProfile(null);
     setRecoveryReady(false);
   };
+
+  // Bloc visuel réutilisé pour éviter de répéter le même style
+  // à chaque page réservée aux administrateurs.
+  const renderAccessDenied = (message: string) => (
+    <div
+      style={{
+        maxWidth: '600px',
+        margin: '0 auto',
+        padding: '20px',
+        backgroundColor: '#fff1f0',
+        border: '1px solid #ffa39e',
+        borderRadius: '8px',
+        color: '#cf1322',
+      }}
+    >
+      <h2>Accès refusé</h2>
+      <p>{message}</p>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -165,6 +201,8 @@ function App() {
     );
   }
 
+  // Cas particulier : la page de changement de mot de passe
+  // doit rester accessible même hors navigation classique.
   if (currentPage === 'update_password') {
     return (
       <UpdatePassword
@@ -174,6 +212,8 @@ function App() {
     );
   }
 
+  // Si aucune session n'existe, on reste sur les écrans publics :
+  // connexion ou mot de passe oublié.
   if (!session) {
     if (currentPage === 'forgot_password') {
       return <ForgotPassword onBackToLogin={() => setCurrentPage('accueil')} />;
@@ -189,6 +229,7 @@ function App() {
 
   const isAdmin = userProfile?.role === 'administrateur';
 
+  // La session existe, mais on attend encore le profil applicatif.
   if (!userProfile) {
     return (
       <div
@@ -226,82 +267,30 @@ function App() {
           (isAdmin ? (
             <StockCheck />
           ) : (
-            <div
-              style={{
-                maxWidth: '600px',
-                margin: '0 auto',
-                padding: '20px',
-                backgroundColor: '#fff1f0',
-                border: '1px solid #ffa39e',
-                borderRadius: '8px',
-                color: '#cf1322',
-              }}
-            >
-              <h2>Accès refusé</h2>
-              <p>Cette interface est réservée aux administrateurs.</p>
-            </div>
+            renderAccessDenied('Cette interface est réservée aux administrateurs.')
           ))}
 
         {currentPage === 'admin_options' &&
           (isAdmin ? (
             <AdminOptions onNavigate={setCurrentPage} />
           ) : (
-            <div
-              style={{
-                maxWidth: '600px',
-                margin: '0 auto',
-                padding: '20px',
-                backgroundColor: '#fff1f0',
-                border: '1px solid #ffa39e',
-                borderRadius: '8px',
-                color: '#cf1322',
-              }}
-            >
-              <h2>Accès refusé</h2>
-              <p>Cette interface est réservée aux administrateurs.</p>
-            </div>
+            renderAccessDenied('Cette interface est réservée aux administrateurs.')
           ))}
 
         {currentPage === 'create_keg_identity' &&
           (isAdmin ? (
             <KegIdentityCreator />
           ) : (
-            <div
-              style={{
-                maxWidth: '600px',
-                margin: '0 auto',
-                padding: '20px',
-                backgroundColor: '#fff1f0',
-                border: '1px solid #ffa39e',
-                borderRadius: '8px',
-                color: '#cf1322',
-              }}
-            >
-              <h2>Accès refusé</h2>
-              <p>
-                Cette interface de création d'identité de fût est réservée aux administrateurs.
-              </p>
-            </div>
+            renderAccessDenied(
+              "Cette interface de création d'identité de fût est réservée aux administrateurs."
+            )
           ))}
 
         {currentPage === 'create_user' &&
           (isAdmin ? (
             <CreateUser />
           ) : (
-            <div
-              style={{
-                maxWidth: '600px',
-                margin: '0 auto',
-                padding: '20px',
-                backgroundColor: '#fff1f0',
-                border: '1px solid #ffa39e',
-                borderRadius: '8px',
-                color: '#cf1322',
-              }}
-            >
-              <h2>Accès refusé</h2>
-              <p>Cette interface est réservée aux administrateurs.</p>
-            </div>
+            renderAccessDenied('Cette interface est réservée aux administrateurs.')
           ))}
       </main>
     </div>
