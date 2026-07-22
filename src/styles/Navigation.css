@@ -1,0 +1,155 @@
+.app-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  padding: 12px 20px;
+  background: rgba(250, 250, 245, 0.96);
+  border-bottom: 1px solid #dddccd;
+}
+
+.app-nav__inner {
+  max-width: 1180px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.app-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid #d9dacd;
+  border-radius: 14px;
+  background: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-nav__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: #eef2e3;
+  font-size: 18px;
+}
+
+.app-nav__brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.1;
+}
+
+.app-nav__brand-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #2f312b;
+}
+
+.app-nav__brand-subtitle {
+  font-size: 11px;
+  color: #7f8556;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.app-nav__list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.app-nav__link {
+  padding: 9px 13px;
+  border-radius: 12px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  color: #414439;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.app-nav__link--active {
+  background: #eef2e3;
+  border-color: #8f9561;
+  color: #5f6738;
+}
+
+.app-nav__link--admin {
+  color: #5b3f7a;
+  border-color: #ccb9e0;
+}
+
+.app-nav__link--active-admin {
+  background: #f4eef9;
+  border-color: #8f70b1;
+  color: #5a3d7d;
+}
+
+.app-nav__logout {
+  margin-left: auto;
+  padding: 10px 14px;
+  border: none;
+  border-radius: 12px;
+  background: #3a3b38;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .app-nav {
+    padding: 12px 16px;
+  }
+
+  .app-nav__inner {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .app-nav__list {
+    order: 3;
+    width: 100%;
+  }
+
+  .app-nav__logout {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .app-nav {
+    padding: 10px 12px;
+  }
+
+  .app-nav__brand {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .app-nav__list {
+    gap: 8px;
+  }
+
+  .app-nav__link {
+    padding: 8px 11px;
+    font-size: 13px;
+  }
+
+  .app-nav__logout {
+    width: 100%;
+  }
+}

@@ -1,6 +1,7 @@
-// src/components/Home.tsx
 import React from 'react';
 import { UserProfile, ActivePage } from '../types/app';
+import '../styles/Home.css';
+
 
 interface HomeProps {
   userProfile: UserProfile | null;
@@ -11,91 +12,96 @@ export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate }) => {
   const isAdmin = userProfile?.role === 'administrateur';
 
   return (
-    <div style={{ padding: '20px', maxWidth: '700px', margin: '0 auto' }}>
-      <h1>Gestion de la Brasserie</h1>
+    <div className="home-page">
+      <section className="home-hero">
+        <div className="home-hero__brand">
+          <img
+            src="/logo512.jpg"
+            alt="Logo Île & Elle"
+            className="home-hero__logo"
+          />
 
-      <div
-        style={{
-          backgroundColor: '#e9ecef',
-          padding: '15px',
-          borderRadius: '6px',
-          marginBottom: '25px',
-        }}
-      >
-        <h3>Bienvenue, {userProfile?.full_name || 'Collaborateur'} !</h3>
-        <p>
-          <strong>Rôle assigné :</strong>{' '}
-          <span style={{ textTransform: 'capitalize' }}>
-            {userProfile?.role || 'Chargement...'}
-          </span>
-        </p>
-      </div>
+          <div className="home-hero__text">
+            <p className="home-hero__eyebrow">Gestion des fûts</p>
+            <h1 className="home-hero__title">Gestion de la Brasserie</h1>
+            <p className="home-hero__subtitle">
+              Accédez rapidement aux actions principales de suivi, de scan et d’administration.
+            </p>
+          </div>
+        </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        <div className="home-welcome-card">
+          <div>
+            <p className="home-welcome-card__label">Bienvenue</p>
+            <h2 className="home-welcome-card__name">
+              {userProfile?.full_name || 'Collaborateur'}
+            </h2>
+          </div>
+
+          <div className="home-role-badge">
+            <span className="home-role-badge__label">Rôle</span>
+            <span className="home-role-badge__value">
+              {userProfile?.role || 'Chargement...'}
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-actions">
         <button
+          type="button"
           onClick={() => onNavigate('scan_keg')}
-          style={{
-            padding: '20px',
-            fontSize: '16px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            border: '1px solid #007bff',
-            backgroundColor: '#fff',
-            color: '#007bff',
-          }}
+          className="home-action-card home-action-card--primary"
         >
-          📷 Scanner un fût
+          <span className="home-action-card__icon" aria-hidden="true">
+            📷
+          </span>
+          <span className="home-action-card__content">
+            <span className="home-action-card__title">Scanner un fût</span>
+            <span className="home-action-card__description">
+              Identifier rapidement un fût et enregistrer son mouvement.
+            </span>
+          </span>
         </button>
 
         <button
+          type="button"
           onClick={() => onNavigate('clients')}
-          style={{
-            padding: '20px',
-            fontSize: '16px',
-            cursor: 'pointer',
-            borderRadius: '8px',
-            border: '1px solid #28a745',
-            backgroundColor: '#fff',
-            color: '#28a745',
-          }}
+          className="home-action-card home-action-card--secondary"
         >
-          👥 Créer un client
+          <span className="home-action-card__icon" aria-hidden="true">
+            👥
+          </span>
+          <span className="home-action-card__content">
+            <span className="home-action-card__title">Créer un client</span>
+            <span className="home-action-card__description">
+              Ajouter un nouveau client sans passer par les options avancées.
+            </span>
+          </span>
         </button>
-      </div>
+      </section>
 
       {isAdmin && (
-        <div
-          style={{
-            marginTop: '30px',
-            padding: '20px',
-            border: '1px dashed #722ed1',
-            borderRadius: '6px',
-            backgroundColor: '#faf5ff',
-          }}
-        >
-          <h4 style={{ color: '#531dab', marginTop: 0, marginBottom: '10px' }}>
-            Options Administrateur
-          </h4>
+        <section className="home-admin-card">
+          <div className="home-admin-card__header">
+            <div>
+              <p className="home-admin-card__eyebrow">Administration</p>
+              <h3 className="home-admin-card__title">Options administrateur</h3>
+            </div>
+          </div>
 
-          <p style={{ fontSize: '14px', marginBottom: '15px' }}>
+          <p className="home-admin-card__text">
             Les outils d’administration ont été regroupés dans un espace dédié pour alléger le menu principal.
           </p>
 
           <button
+            type="button"
             onClick={() => onNavigate('admin_options')}
-            style={{
-              padding: '12px 16px',
-              fontSize: '15px',
-              cursor: 'pointer',
-              borderRadius: '8px',
-              border: '1px solid #722ed1',
-              backgroundColor: '#fff',
-              color: '#531dab',
-            }}
+            className="home-admin-card__button"
           >
             Ouvrir les options administrateur
           </button>
-        </div>
+        </section>
       )}
     </div>
   );
