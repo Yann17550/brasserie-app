@@ -115,7 +115,7 @@
 
 .home-welcome {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 8px;
   margin-bottom: 14px;
   padding: 14px 16px;
@@ -126,10 +126,8 @@
 
 .home-welcome__label {
   margin: 0;
-  font-size: 20px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: #7f8556;
   flex-shrink: 0;
 }
@@ -138,6 +136,7 @@
   margin: 0;
   font-size: 20px;
   line-height: 1.15;
+  font-weight: 700;
   color: #2f312b;
 }
 
