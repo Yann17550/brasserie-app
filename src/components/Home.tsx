@@ -1,106 +1,151 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { UserProfile, ActivePage } from '../types/app';
 import '../styles/Home.css';
-
 
 interface HomeProps {
   userProfile: UserProfile | null;
   onNavigate: (page: ActivePage) => void;
+  onLogout: () => void;
 }
 
-export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate }) => {
+export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate, onLogout }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = userProfile?.role === 'administrateur';
+
+  const handleNavigate = (page: ActivePage) => {
+    setMenuOpen(false);
+    onNavigate(page);
+  };
+
+  const handleLogoutClick = () => {
+    setMenuOpen(false);
+    onLogout();
+  };
 
   return (
     <div className="home-page">
-      <section className="home-hero">
-        <div className="home-hero__brand">
-          <img
-            src="/logo512.jpg"
-            alt="Logo Île & Elle"
-            className="home-hero__logo"
-          />
+      <section className="home-header-card">
+        <div className="home-header-card__row">
+          <div className="home-header-card__brand">
+            <img
+              src="/logo512.png"
+              alt="Logo Île & Elle"
+              className="home-header-card__logo"
+            />
 
-          <div className="home-hero__text">
-            <p className="home-hero__eyebrow">Gestion des fûts</p>
-            <h1 className="home-hero__title">Gestion de la Brasserie</h1>
-            <p className="home-hero__subtitle">
-              Accédez rapidement aux actions principales de suivi, de scan et d’administration.
-            </p>
+            <div className="home-header-card__text">
+              <h1 className="home-header-card__title">Île & Elle</h1>
+              <p className="home-header-card__subtitle">Gestion des fûts</p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            className={`home-menu-toggle ${menuOpen ? 'home-menu-toggle--open' : ''}`}
+            onClick={() => setMenuOpen((prev) => !prev)}
+            aria-label="Ouvrir le menu d'accueil"
+            aria-expanded={menuOpen}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
         </div>
 
-        <div className="home-welcome-card">
-          <div>
-            <p className="home-welcome-card__label">Bienvenue</p>
-            <h2 className="home-welcome-card__name">
-              {userProfile?.full_name || 'Collaborateur'}
-            </h2>
-          </div>
+        {menuOpen && (
+          <div className="home-header-menu">
+            <button
+              type="button"
+              onClick={() => handleNavigate('scan_keg')}
+              className="home-header-menu__button home-header-menu__button--primary"
+            >
+              Scanner un fût
+            </button>
 
-          <div className="home-role-badge">
-            <span className="home-role-badge__label">Rôle</span>
-            <span className="home-role-badge__value">
-              {userProfile?.role || 'Chargement...'}
-            </span>
+            <button
+              type="button"
+              onClick={() => handleNavigate('clients')}
+              className="home-header-menu__button"
+            >
+              Créer un client
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLogoutClick}
+              className="home-header-menu__button home-header-menu__button--logout"
+            >
+              Déconnexion
+            </button>
           </div>
-        </div>
+        )}
       </section>
 
-      <section className="home-actions">
+      <section className="home-welcome">
+        <p className="home-welcome__label">Bienvenue</p>
+        <h2 className="home-welcome__name">
+          {userProfile?.full_name || 'Collaborateur'}
+        </h2>
+      </section>
+
+      <section className="home-main-action">
         <button
           type="button"
           onClick={() => onNavigate('scan_keg')}
-          className="home-action-card home-action-card--primary"
+          className="home-main-action__button"
         >
-          <span className="home-action-card__icon" aria-hidden="true">
+          <span className="home-main-action__icon" aria-hidden="true">
             📷
           </span>
-          <span className="home-action-card__content">
-            <span className="home-action-card__title">Scanner un fût</span>
-            <span className="home-action-card__description">
-              Identifier rapidement un fût et enregistrer son mouvement.
-            </span>
-          </span>
-        </button>
 
-        <button
-          type="button"
-          onClick={() => onNavigate('clients')}
-          className="home-action-card home-action-card--secondary"
-        >
-          <span className="home-action-card__icon" aria-hidden="true">
-            👥
-          </span>
-          <span className="home-action-card__content">
-            <span className="home-action-card__title">Créer un client</span>
-            <span className="home-action-card__description">
-              Ajouter un nouveau client sans passer par les options avancées.
+          <span className="home-main-action__content">
+            <span className="home-main-action__title">Scanner un fût</span>
+            <span className="home-main-action__description">
+              Action principale de l’accueil.
             </span>
           </span>
         </button>
       </section>
 
       {isAdmin && (
-        <section className="home-admin-card">
-          <div className="home-admin-card__header">
-            <div>
-              <p className="home-admin-card__eyebrow">Administration</p>
-              <h3 className="home-admin-card__title">Options administrateur</h3>
-            </div>
+        <section className="home-admin">
+          <div className="home-admin__header">
+            <h3 className="home-admin__title">Administration</h3>
           </div>
 
-          <p className="home-admin-card__text">
-            Les outils d’administration ont été regroupés dans un espace dédié pour alléger le menu principal.
-          </p>
+          <div className="home-admin__grid">
+            <button
+              type="button"
+              onClick={() => onNavigate('check_stock')}
+              className="home-admin__button"
+            >
+              Voir le stock
+            </button>
 
-          <button
-            type="button"
-            onClick={() => onNavigate('admin_options')}
-            className="home-admin-card__button"
-          >
-            Ouvrir les options administrateur
-          </button>
+            <button
+              type="button"
+              onClick={() => onNavigate('create_keg_identity')}
+              className="home-admin__button"
+            >
+              Créer un fût
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onNavigate('create_user')}
+              className="home-admin__button"
+            >
+              Créer un utilisateur
+            </button>
+
+            <button
+              type="button"
+              disabled
+              className="home-admin__button home-admin__button--disabled"
+            >
+              Modifier un utilisateur
+            </button>
+          </div>
         </section>
       )}
     </div>

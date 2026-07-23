@@ -247,16 +247,22 @@ function App() {
 
   return (
     <div>
-      <Navigation
-        currentPage={currentPage}
-        onPageChange={setCurrentPage}
-        onLogout={handleLogout}
-        userRole={userProfile.role}
-      />
+      {currentPage !== 'accueil' && (
+        <Navigation
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+          onLogout={handleLogout}
+          userRole={userProfile.role}
+        />
+      )}
 
-      <main style={{ padding: '20px' }}>
+      <main style={{ padding: '16px 20px 24px' }}>
         {currentPage === 'accueil' && (
-          <Home userProfile={userProfile} onNavigate={setCurrentPage} />
+          <Home
+            userProfile={userProfile}
+            onNavigate={setCurrentPage}
+            onLogout={handleLogout}
+          />
         )}
 
         {currentPage === 'scan_keg' && <KegScanner userId={session.user.id} />}
