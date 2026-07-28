@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from './services/supabaseClient';
 import { UserProfile, ActivePage } from './types/app';
 import { Login } from './components/Login';
-import { Navigation } from './components/Navigation';
 import { Home } from './components/Home';
 import { KegScanner } from './components/KegScanner';
 import StockCheck from './components/StockCheck';
@@ -21,9 +20,6 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [recoveryReady, setRecoveryReady] = useState(false);
 
-  // Charge le profil métier lié à l'utilisateur connecté.
-  // On garde cette étape séparée car l'utilisateur Supabase Auth ne contient pas
-  // toutes les infos nécessaires à l'application (nom complet, rôle).
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -45,9 +41,6 @@ function App() {
   useEffect(() => {
     let isMounted = true;
 
-    // Initialise l'état d'authentification au chargement de l'application.
-    // Cette partie gère aussi le cas particulier du reset de mot de passe,
-    // où Supabase peut renvoyer un code dans l'URL à échanger contre une session.
     const initializeAuth = async () => {
       try {
         const pathname = window.location.pathname;
@@ -77,8 +70,6 @@ function App() {
             setRecoveryReady(true);
             setLoading(false);
 
-            // Nettoie l'URL après échange du code pour éviter de le conserver
-            // dans la barre d'adresse.
             window.history.replaceState({}, document.title, '/update-password');
             return;
           }
@@ -119,8 +110,6 @@ function App() {
 
     initializeAuth();
 
-    // Écoute les changements de session en temps réel :
-    // connexion, déconnexion, récupération de mot de passe, etc.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, newSession) => {
@@ -159,7 +148,6 @@ function App() {
     };
   }, []);
 
-  // Déconnecte l'utilisateur et remet l'interface dans son état initial.
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setCurrentPage('accueil');
@@ -167,8 +155,6 @@ function App() {
     setRecoveryReady(false);
   };
 
-  // Bloc visuel réutilisé pour éviter de répéter le même style
-  // à chaque page réservée aux administrateurs.
   const renderAccessDenied = (message: string) => (
     <div
       style={{
@@ -201,8 +187,6 @@ function App() {
     );
   }
 
-  // Cas particulier : la page de changement de mot de passe
-  // doit rester accessible même hors navigation classique.
   if (currentPage === 'update_password') {
     return (
       <UpdatePassword
@@ -212,8 +196,6 @@ function App() {
     );
   }
 
-  // Si aucune session n'existe, on reste sur les écrans publics :
-  // connexion ou mot de passe oublié.
   if (!session) {
     if (currentPage === 'forgot_password') {
       return <ForgotPassword onBackToLogin={() => setCurrentPage('accueil')} />;
@@ -229,7 +211,6 @@ function App() {
 
   const isAdmin = userProfile?.role === 'administrateur';
 
-  // La session existe, mais on attend encore le profil applicatif.
   if (!userProfile) {
     return (
       <div
@@ -247,15 +228,6 @@ function App() {
 
   return (
     <div>
-      {currentPage !== 'accueil' && (
-        <Navigation
-          currentPage={currentPage}
-          onPageChange={setCurrentPage}
-          onLogout={handleLogout}
-          userRole={userProfile.role}
-        />
-      )}
-
       <main style={{ padding: '16px 20px 24px' }}>
         {currentPage === 'accueil' && (
           <Home
@@ -265,7 +237,14 @@ function App() {
           />
         )}
 
-        {currentPage === 'scan_keg' && <KegScanner userId={session.user.id} />}
+        {currentPage === 'scan_keg' && (
+          <KegScanner
+            userId={session.user.id}
+            onNavigate={setCurrentPage}
+            onLogout={handleLogout}
+            userRole={userProfile.role}
+          />
+        )}
 
         {currentPage === 'clients' && <ClientCreator />}
 

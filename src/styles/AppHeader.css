@@ -1,0 +1,253 @@
+.app-header {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fcfcf8 0%, #f3f3eb 100%);
+  border: 1px solid #d8dacb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(57, 60, 47, 0.08);
+}
+
+.app-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.app-header__logo {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  border-radius: 16px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  flex-shrink: 0;
+  padding: 6px;
+}
+
+.app-header__text {
+  min-width: 0;
+}
+
+.app-header__title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.05;
+  color: #2f312b;
+}
+
+.app-header__subtitle {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: #5f6354;
+}
+
+.app-header__toggle {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 46px;
+  height: 46px;
+  padding: 0 10px;
+  border: 1px solid #d8dacb;
+  border-radius: 14px;
+  background: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-header__toggle span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: #2f312b;
+}
+
+.app-header__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e0e2d7;
+}
+
+.app-header__menu-button {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  color: #414439;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-header__menu-button--primary {
+  border-color: #8f9561;
+  background: #eef2e3;
+  color: #5f6738;
+}
+
+.app-header__menu-button--logout {
+  border-color: #3a3b38;
+  background: #3a3b38;
+  color: #ffffff;
+}
+
+.app-header__menu-button--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .app-header__logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .app-header__title {
+    font-size: 26px;
+  }
+
+  .app-header__subtitle {
+    font-size: 14px;
+  }
+}.app-header {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fcfcf8 0%, #f3f3eb 100%);
+  border: 1px solid #d8dacb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(57, 60, 47, 0.08);
+}
+
+.app-header__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.app-header__brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.app-header__logo {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  border-radius: 16px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  flex-shrink: 0;
+  padding: 6px;
+}
+
+.app-header__text {
+  min-width: 0;
+}
+
+.app-header__title {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.05;
+  color: #2f312b;
+}
+
+.app-header__subtitle {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: #5f6354;
+}
+
+.app-header__toggle {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 46px;
+  height: 46px;
+  padding: 0 10px;
+  border: 1px solid #d8dacb;
+  border-radius: 14px;
+  background: #ffffff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.app-header__toggle span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 999px;
+  background: #2f312b;
+}
+
+.app-header__menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e0e2d7;
+}
+
+.app-header__menu-button {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  color: #414439;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.app-header__menu-button--primary {
+  border-color: #8f9561;
+  background: #eef2e3;
+  color: #5f6738;
+}
+
+.app-header__menu-button--logout {
+  border-color: #3a3b38;
+  background: #3a3b38;
+  color: #ffffff;
+}
+
+.app-header__menu-button--disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .app-header__logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .app-header__title {
+    font-size: 26px;
+  }
+
+  .app-header__subtitle {
+    font-size: 14px;
+  }
+}

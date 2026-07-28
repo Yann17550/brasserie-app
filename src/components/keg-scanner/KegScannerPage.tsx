@@ -2,12 +2,21 @@ import React from 'react';
 import { KegScannerForm } from './KegScannerForm';
 import { KegScannerStatus } from './KegScannerStatus';
 import { useKegScanner } from './useKegScanner';
+import { AppHeader, getCommonHeaderActions } from '../AppHeader';
 
 type Props = {
   userId: string;
+  onNavigate: (page: import('../../types/app').ActivePage) => void;
+  onLogout: () => void;
+  userRole: import('../../types/app').UserRole;
 };
 
-export default function KegScannerPage({ userId }: Props) {
+export default function KegScannerPage({
+  userId,
+  onNavigate,
+  onLogout,
+  userRole,
+}: Props) {
   const {
     scanResult,
     identifiedKeg,
@@ -28,20 +37,13 @@ export default function KegScannerPage({ userId }: Props) {
 
   return (
     <div className="keg-scanner">
-      <section className="keg-scanner__header-card">
-        <div className="keg-scanner__header-row">
-          <img
-            src="/logo512.png"
-            alt="Logo Île & Elle"
-            className="keg-scanner__logo"
-          />
-
-          <div className="keg-scanner__header-text">
-            <h2 className="keg-scanner__title">Île & Elle</h2>
-            <p className="keg-scanner__subtitle">Gestion des fûts</p>
-          </div>
-        </div>
-      </section>
+      <AppHeader
+        actions={getCommonHeaderActions({
+          onNavigate,
+          onLogout,
+          userRole,
+        })}
+      />
 
       {!scanResult && <div id="reader" className="keg-scanner__reader"></div>}
 

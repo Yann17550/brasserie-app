@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { UserProfile, ActivePage } from '../types/app';
+import { AppHeader, getCommonHeaderActions } from './AppHeader';
 import '../styles/Home.css';
 
 interface HomeProps {
@@ -9,77 +10,17 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ userProfile, onNavigate, onLogout }) => {
-  const [menuOpen, setMenuOpen] = useState(false);
   const isAdmin = userProfile?.role === 'administrateur';
-
-  const handleNavigate = (page: ActivePage) => {
-    setMenuOpen(false);
-    onNavigate(page);
-  };
-
-  const handleLogoutClick = () => {
-    setMenuOpen(false);
-    onLogout();
-  };
 
   return (
     <div className="home-page">
-      <section className="home-header-card">
-        <div className="home-header-card__row">
-          <div className="home-header-card__brand">
-            <img
-              src="/logo512.png"
-              alt="Logo Île & Elle"
-              className="home-header-card__logo"
-            />
-
-            <div className="home-header-card__text">
-              <h1 className="home-header-card__title">Île & Elle</h1>
-              <p className="home-header-card__subtitle">Gestion des fûts</p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className={`home-menu-toggle ${menuOpen ? 'home-menu-toggle--open' : ''}`}
-            onClick={() => setMenuOpen((prev) => !prev)}
-            aria-label="Ouvrir le menu d'accueil"
-            aria-expanded={menuOpen}
-          >
-            <span />
-            <span />
-            <span />
-          </button>
-        </div>
-
-        {menuOpen && (
-          <div className="home-header-menu">
-            <button
-              type="button"
-              onClick={() => handleNavigate('scan_keg')}
-              className="home-header-menu__button home-header-menu__button--primary"
-            >
-              Scanner un fût
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleNavigate('clients')}
-              className="home-header-menu__button"
-            >
-              Créer un client
-            </button>
-
-            <button
-              type="button"
-              onClick={handleLogoutClick}
-              className="home-header-menu__button home-header-menu__button--logout"
-            >
-              Déconnexion
-            </button>
-          </div>
-        )}
-      </section>
+      <AppHeader
+        actions={getCommonHeaderActions({
+          onNavigate,
+          onLogout,
+          userRole: userProfile?.role,
+        })}
+      />
 
       <section className="home-welcome">
         <p className="home-welcome__label">Bienvenue</p>
