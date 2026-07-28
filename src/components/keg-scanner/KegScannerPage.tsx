@@ -28,7 +28,20 @@ export default function KegScannerPage({ userId }: Props) {
 
   return (
     <div className="keg-scanner">
-      <h2 className="keg-scanner__title">Scanner un fût</h2>
+      <section className="keg-scanner__header-card">
+        <div className="keg-scanner__header-row">
+          <img
+            src="/logo512.png"
+            alt="Logo Île & Elle"
+            className="keg-scanner__logo"
+          />
+
+          <div className="keg-scanner__header-text">
+            <h2 className="keg-scanner__title">Île & Elle</h2>
+            <p className="keg-scanner__subtitle">Gestion des fûts</p>
+          </div>
+        </div>
+      </section>
 
       {!scanResult && <div id="reader" className="keg-scanner__reader"></div>}
 

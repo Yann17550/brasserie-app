@@ -1,6 +1,6 @@
 import React from 'react';
 import type { KegWithCurrentState } from './kegScanner.types';
-import { getCurrentEtatLabel, getCurrentMovementLabel } from './kegScanner.utils';
+import { getCurrentEtatLabel } from './kegScanner.utils';
 
 type Props = {
   scanResult: string | null;
@@ -15,38 +15,60 @@ export function KegScannerStatus({
   identifiedKeg,
   statusMessage,
   errorMessage,
-  debugInfo,
 }: Props) {
   return (
     <>
       {scanResult && (
-        <div className="keg-scanner__scan-result">
-          <p className="keg-scanner__scan-line">
-            <strong>QR détecté :</strong> {scanResult}
-          </p>
+        <div className="keg-scanner__result-card">
+          <div className="keg-scanner__result-header">
+            <h3 className="keg-scanner__result-title">Résultat du scan</h3>
+          </div>
 
-          {identifiedKeg && (
-            <>
-              <p className="keg-scanner__scan-line">
-                <strong>Brasserie :</strong> {identifiedKeg.brewery_name}
-              </p>
-              <p className="keg-scanner__scan-line">
-                <strong>Bière :</strong> {identifiedKeg.beer_type}
-              </p>
-              <p className="keg-scanner__scan-line">
-                <strong>Capacité :</strong> {identifiedKeg.capacity_liters}L
-              </p>
-              <p className="keg-scanner__scan-line">
-                <strong>Numéro de fût :</strong> {identifiedKeg.keg_number ?? 'Non renseigné'}
-              </p>
-              <p className="keg-scanner__scan-line">
-                <strong>Statut actuel :</strong> {getCurrentMovementLabel(identifiedKeg.current_movement_type)}
-              </p>
-              <p className="keg-scanner__scan-line keg-scanner__scan-line--last">
-                <strong>État actuel :</strong> {getCurrentEtatLabel(identifiedKeg.current_etat_fut)}
-              </p>
-            </>
-          )}
+          <div className="keg-scanner__result-list">
+            <p className="keg-scanner__result-line">
+              <span className="keg-scanner__result-label">QR détecté :</span>
+              <span className="keg-scanner__result-value">{scanResult}</span>
+            </p>
+
+            {identifiedKeg && (
+              <>
+                <p className="keg-scanner__result-line">
+                  <span className="keg-scanner__result-label">Brasserie :</span>
+                  <span className="keg-scanner__result-value">
+                    {identifiedKeg.brewery_name}
+                  </span>
+                </p>
+
+                <p className="keg-scanner__result-line">
+                  <span className="keg-scanner__result-label">Bière :</span>
+                  <span className="keg-scanner__result-value">
+                    {identifiedKeg.beer_type}
+                  </span>
+                </p>
+
+                <p className="keg-scanner__result-line">
+                  <span className="keg-scanner__result-label">Capacité :</span>
+                  <span className="keg-scanner__result-value">
+                    {identifiedKeg.capacity_liters} L
+                  </span>
+                </p>
+
+                <p className="keg-scanner__result-line">
+                  <span className="keg-scanner__result-label">Numéro de fût :</span>
+                  <span className="keg-scanner__result-value">
+                    {identifiedKeg.keg_number ?? 'Non renseigné'}
+                  </span>
+                </p>
+
+                <p className="keg-scanner__result-line">
+                  <span className="keg-scanner__result-label">État actuel :</span>
+                  <span className="keg-scanner__result-value">
+                    {getCurrentEtatLabel(identifiedKeg.current_etat_fut)}
+                  </span>
+                </p>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -59,14 +81,6 @@ export function KegScannerStatus({
       {errorMessage && (
         <div className="keg-scanner__message keg-scanner__message--error">
           {errorMessage}
-        </div>
-      )}
-
-      {debugInfo && (
-        <div className="keg-scanner__message keg-scanner__message--debug">
-          <strong>🔧 Info Diagnostic :</strong>
-          <br />
-          {debugInfo}
         </div>
       )}
     </>

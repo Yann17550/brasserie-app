@@ -1,60 +1,139 @@
 .keg-scanner {
-  padding: 20px;
-  max-width: 700px;
+  max-width: 860px;
   margin: 0 auto;
+  padding: 4px 0 20px;
+  color: #2f312b;
+}
+
+.keg-scanner__header-card {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #fcfcf8 0%, #f3f3eb 100%);
+  border: 1px solid #d8dacb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(57, 60, 47, 0.08);
+}
+
+.keg-scanner__header-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.keg-scanner__logo {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  border-radius: 16px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  flex-shrink: 0;
+  padding: 6px;
+}
+
+.keg-scanner__header-text {
+  min-width: 0;
 }
 
 .keg-scanner__title {
-  text-align: center;
-  margin-bottom: 20px;
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.05;
+  color: #2f312b;
+}
+
+.keg-scanner__subtitle {
+  margin: 4px 0 0;
+  font-size: 15px;
+  color: #5f6354;
 }
 
 .keg-scanner__reader {
   width: 100%;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: 18px;
+  border: 1px solid #d8dacb;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(57, 60, 47, 0.08);
 }
 
-.keg-scanner__scan-result {
-  padding: 15px;
-  background-color: #fafafa;
-  border: 1px solid #d9d9d9;
-  border-radius: 6px;
-  margin-bottom: 20px;
+.keg-scanner__result-card {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #e8f4ff 0%, #d8ebff 100%);
+  border: 1px solid #9fc7f5;
+  box-shadow: 0 10px 24px rgba(50, 102, 168, 0.12);
 }
 
-.keg-scanner__scan-line {
-  margin: 0 0 8px 0;
-  word-break: break-all;
+.keg-scanner__result-header {
+  margin-bottom: 12px;
 }
 
-.keg-scanner__scan-line--last {
-  margin-bottom: 0;
+.keg-scanner__result-title {
+  margin: 0;
+  font-size: 17px;
+  color: #174a87;
+}
+
+.keg-scanner__result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.keg-scanner__result-line {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.keg-scanner__result-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #2962a8;
+}
+
+.keg-scanner__result-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #12375f;
+  word-break: break-word;
 }
 
 .keg-scanner__form-card {
-  padding: 20px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  padding: 16px;
+  background: #f6f7f1;
+  border: 1px solid #dde0d2;
+  border-radius: 16px;
+  margin-bottom: 16px;
 }
 
 .keg-scanner__field {
-  margin-bottom: 15px;
+  margin-bottom: 14px;
+}
+
+.keg-scanner__field:last-child {
+  margin-bottom: 0;
 }
 
 .keg-scanner__label {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 6px;
+  color: #2f312b;
 }
 
 .keg-scanner__input {
   width: 100%;
-  padding: 10px;
-  border-radius: 4px;
-  border: 1px solid #d9d9d9;
+  padding: 11px 12px;
+  border-radius: 12px;
+  border: 1px solid #d8dacb;
   background-color: #fff;
   box-sizing: border-box;
+  font-size: 14px;
 }
 
 .keg-scanner__hint {
@@ -65,48 +144,41 @@
 }
 
 .keg-scanner__message {
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 15px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  margin-bottom: 14px;
+  font-size: 14px;
 }
 
 .keg-scanner__message--status {
   background-color: #e6f7ff;
   border: 1px solid #91d5ff;
-  color: #1890ff;
+  color: #185d9d;
 }
 
 .keg-scanner__message--error {
   background-color: #fff1f0;
   border: 1px solid #ffa39e;
-  color: #f5222d;
-}
-
-.keg-scanner__message--debug {
-  background-color: #fffbe6;
-  border: 1px solid #ffe58f;
-  color: #d46b08;
-  font-size: 12px;
-  font-family: monospace;
-  word-break: break-all;
+  color: #c53b3d;
 }
 
 .keg-scanner__button {
   width: 100%;
-  padding: 12px;
-  border-radius: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
   cursor: pointer;
   font-size: 14px;
+  font-weight: 600;
 }
 
 .keg-scanner__button--primary {
-  background-color: #001529;
+  background-color: #2f312b;
   color: #fff;
   border: none;
 }
 
 .keg-scanner__button--restart {
-  background-color: #001529;
+  background-color: #2f312b;
   color: #fff;
   border: none;
 }
@@ -116,4 +188,24 @@
   color: #fff;
   border: none;
   cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .keg-scanner__logo {
+    width: 72px;
+    height: 72px;
+  }
+
+  .keg-scanner__title {
+    font-size: 26px;
+  }
+
+  .keg-scanner__subtitle {
+    font-size: 14px;
+  }
+
+  .keg-scanner__result-card,
+  .keg-scanner__form-card {
+    padding: 14px;
+  }
 }
